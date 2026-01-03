@@ -1,6 +1,4 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
   "functions": {
     "api/mcp.ts": {
       "maxDuration": 60
@@ -8,7 +6,7 @@
   },
   "rewrites": [
     {
-      "source": "/api/mcp",
+      "source": "/(.*)",
       "destination": "/api/mcp"
     }
   ]
