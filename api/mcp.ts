@@ -18,14 +18,20 @@ const mcpHandler = createMcpHandler((server: McpServer) => {
 
 // Convert Vercel Request to Web Request
 function toWebRequest(req: VercelRequest): Request {
-  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const protocol = req.headers['x-forwarded-proto'] || 'http';
   const host = req.headers['host'] || 'localhost';
   const url = `${protocol}://${host}${req.url}`;
+  
+  // Convert body to string if it exists
+  let bodyString: string | undefined = undefined;
+  if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+    bodyString = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+  }
   
   return new Request(url, {
     method: req.method,
     headers: req.headers as Record<string, string>,
-    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+    body: bodyString,
   });
 }
 

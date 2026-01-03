@@ -13,13 +13,18 @@ const mcpHandler = createMcpHandler((server) => {
 });
 // Convert Vercel Request to Web Request
 function toWebRequest(req) {
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
     const host = req.headers['host'] || 'localhost';
     const url = `${protocol}://${host}${req.url}`;
+    // Convert body to string if it exists
+    let bodyString = undefined;
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+        bodyString = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    }
     return new Request(url, {
         method: req.method,
         headers: req.headers,
-        body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+        body: bodyString,
     });
 }
 // Export Vercel-compatible handler that extracts API key from query parameter

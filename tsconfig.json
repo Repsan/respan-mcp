@@ -14,6 +14,6 @@
     "sourceMap": true,
     "lib": ["ES2022"]
   },
-  "include": ["lib/**/*"],
-  "exclude": ["node_modules", "dist", "api"]
+  "include": ["lib/**/*", "api/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
