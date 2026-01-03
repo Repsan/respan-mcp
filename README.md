@@ -4,10 +4,10 @@ Model Context Protocol (MCP) server for [Keywords AI](https://keywordsai.co) - a
 
 ## Features
 
-- 📊 **Logs** - Query and filter LLM request logs with powerful filtering
-- 🔍 **Traces** - View complete execution traces with span trees
-- 👥 **Customers** - Access customer data and budget information  
-- 📝 **Prompts** - Manage prompt templates and versions
+- **Logs** - Query and filter LLM request logs with powerful filtering
+- **Traces** - View complete execution traces with span trees
+- **Customers** - Access customer data and budget information  
+- **Prompts** - Manage prompt templates and versions
 
 ## Installation
 
