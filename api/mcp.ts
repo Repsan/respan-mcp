@@ -15,7 +15,6 @@ const mcpHandler = createMcpHandler((server: McpServer) => {
   registerUserTools(server);
   registerPromptTools(server);
 });
-
 // Convert Vercel Request to Web Request
 function toWebRequest(req: VercelRequest): Request {
   const protocol = req.headers['x-forwarded-proto'] || 'http';
@@ -38,12 +37,16 @@ function toWebRequest(req: VercelRequest): Request {
 // Export Vercel-compatible handler that extracts API key from query parameter
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    // Extract API key from query parameter and store it
-    const apiKey = req.query.apikey as string | undefined;
+    // Priority: 1. URL query parameter, 2. Environment variable
+    const apiKey = (req.query.apikey as string) || process.env.KEYWORDS_API_KEY;
     
-    if (apiKey) {
-      setRequestApiKey(apiKey);
+    if (!apiKey) {
+      return res.status(401).json({ 
+        error: "No API Key provided. Use ?apikey=YOUR_KEY or set KEYWORDS_API_KEY environment variable." 
+      });
     }
+    
+    setRequestApiKey(apiKey);
     
     // Convert to Web Request
     const webRequest = toWebRequest(req);

@@ -30,11 +30,14 @@ function toWebRequest(req) {
 // Export Vercel-compatible handler that extracts API key from query parameter
 export default async function handler(req, res) {
     try {
-        // Extract API key from query parameter and store it
-        const apiKey = req.query.apikey;
-        if (apiKey) {
-            setRequestApiKey(apiKey);
+        // Priority: 1. URL query parameter, 2. Environment variable
+        const apiKey = req.query.apikey || process.env.KEYWORDS_API_KEY;
+        if (!apiKey) {
+            return res.status(401).json({
+                error: "No API Key provided. Use ?apikey=YOUR_KEY or set KEYWORDS_API_KEY environment variable."
+            });
         }
+        setRequestApiKey(apiKey);
         // Convert to Web Request
         const webRequest = toWebRequest(req);
         // Call the MCP handler

@@ -1,7 +1,7 @@
 {
   "name": "keywords-mcp",
   "version": "1.0.0",
-  "description": "Model Context Protocol (MCP) server for Keywords AI - supports HTTP streaming and local stdio modes",
+  "description": "Keywords AI 的 MCP 服务器 - 支持 HTTP 流式传输和本地 stdio 模式",
   "main": "dist/lib/index.js",
   "type": "module",
   "bin": {
@@ -10,45 +10,29 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
+    "dev": "vercel dev",
+    "stdio": "npm run build && node dist/lib/index.js",
     "start": "node dist/lib/index.js",
-    "stdio": "tsc && node dist/lib/index.js",
-    "clean": "rm -rf dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rm -rf dist"
   },
   "usage": {
     "mode1_public_http": {
-      "description": "Deploy once, customers pass their API keys via Authorization header",
+      "description": "方案 A：部署一次，客户通过 URL 参数传递 API Key",
       "deploy": "vercel deploy --prod",
-      "url": "https://your-project.vercel.app/api/mcp",
-      "auth": "Authorization: Bearer CUSTOMER_KEYWORDS_AI_KEY"
+      "url": "https://your-project.vercel.app/api/mcp?apikey=YOUR_KEY",
+      "auth": "URL 参数: apikey"
     },
     "mode2_private_deployment": {
-      "description": "Each customer deploys their own instance with API key in environment",
+      "description": "方案 B：客户自行部署，API Key 存在 Vercel 环境变量中",
       "deploy": "vercel deploy --prod",
-      "env": "KEYWORDS_API_KEY=your_key (set in Vercel Dashboard)",
+      "env": "KEYWORDS_API_KEY (在 Vercel Dashboard 设置)",
       "url": "https://customer-project.vercel.app/api/mcp"
     },
     "mode3_local_stdio": {
-      "description": "Local use with Cursor, Claude Desktop, or other MCP clients",
-      "command": "npm run dev",
-      "config": "Set KEYWORDS_API_KEY in mcp.json env section"
+      "description": "方案 C：在 Cursor/Claude Desktop 本地通过 stdio 运行",
+      "command": "node {项目绝对路径}/dist/lib/index.js",
+      "config": "先运行 npm run build，并在环境变量中设置 KEYWORDS_API_KEY"
     }
-  },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "keywords-ai",
-    "observability",
-    "llm",
-    "ai",
-    "http-streaming",
-    "vercel"
-  ],
-  "author": "Keywords AI",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Keywords-AI/keywords-mcp.git"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
