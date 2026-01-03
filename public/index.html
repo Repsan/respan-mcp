@@ -110,7 +110,22 @@
     <h2>Quick Start</h2>
     
     <div class="card">
-        <h3>Mode 1: Local Stdio (Personal Use)</h3>
+        <h3>Mode 1: HTTP Streaming - Public Service</h3>
+        <p>Use the hosted endpoint where each user provides their own API key:</p>
+        <pre><code>{
+  "mcpServers": {
+    "keywords-ai": {
+      "url": "https://mcp.keywordsai.co/api/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
+      }
+    }
+  }
+}</code></pre>
+    </div>
+
+    <div class="card">
+        <h3>Mode 2: Local Stdio (Personal Use)</h3>
         <p>Run locally for development - simplest setup:</p>
         <pre><code>git clone https://github.com/Keywords-AI/keywordsai-mcp.git
 cd keywordsai-mcp
@@ -130,9 +145,10 @@ npm install && npm run build</code></pre>
     </div>
 
     <div class="card">
-        <h3>Mode 2: HTTP Streaming - Private Deployment</h3>
+        <h3>Mode 3: HTTP Streaming - Private Deployment</h3>
         <p>Deploy to Vercel with API key stored as environment variable. No client-side key needed:</p>
         <ol>
+            <li>Clone: <code>git clone <a href="https://github.com/Keywords-AI/keywordsai-mcp">https://github.com/Keywords-AI/keywordsai-mcp</a></code></li>
             <li>Deploy: <code>vercel deploy --prod</code></li>
             <li>Set <code>KEYWORDS_API_KEY</code> in Vercel Dashboard → Environment Variables</li>
         </ol>
@@ -141,21 +157,6 @@ npm install && npm run build</code></pre>
   "mcpServers": {
     "keywords-ai": {
       "url": "https://your-project.vercel.app/mcp"
-    }
-  }
-}</code></pre>
-    </div>
-
-    <div class="card">
-        <h3>Mode 3: HTTP Streaming - Public Service</h3>
-        <p>Use the hosted endpoint where each user provides their own API key:</p>
-        <pre><code>{
-  "mcpServers": {
-    "keywords-ai": {
-      "url": "https://mcp.keywordsai.co/api/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
-      }
     }
   }
 }</code></pre>
