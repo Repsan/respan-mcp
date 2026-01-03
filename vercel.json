@@ -1,4 +1,5 @@
 {
+  "buildCommand": "npm ci && npm run build",
   "rewrites": [
     { "source": "/mcp", "destination": "/api/mcp" }
   ],
