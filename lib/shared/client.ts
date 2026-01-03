@@ -2,12 +2,24 @@
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 
+// Store API key from query parameter for the current request
+let requestApiKey: string | null = null;
+
+export function setRequestApiKey(apiKey: string | null) {
+  requestApiKey = apiKey;
+}
+
 /**
- * Get API Key from environment variable or request header
- * Priority: Authorization header > KEYWORDS_API_KEY environment variable
+ * Get API Key from multiple sources
+ * Priority: Query parameter > Authorization header > KEYWORDS_API_KEY environment variable
  */
 function getApiKey(extra: RequestHandlerExtra<ServerRequest, ServerNotification>): string {
-  // Try to get from request header (if MCP client passes through Authorization)
+  // 1. Try to get from query parameter (stored by the handler)
+  if (requestApiKey) {
+    return requestApiKey;
+  }
+
+  // 2. Try to get from request header (if MCP client passes through Authorization)
   const headers = extra.requestInfo?.headers;
   if (headers) {
     const authHeader = headers["authorization"] || headers["Authorization"];
@@ -19,15 +31,17 @@ function getApiKey(extra: RequestHandlerExtra<ServerRequest, ServerNotification>
     }
   }
 
-  // Get from environment variable
+  // 3. Get from environment variable (fallback for private deployments)
   const envApiKey = process.env.KEYWORDS_API_KEY;
   if (envApiKey) {
     return envApiKey;
   }
 
   throw new Error(
-    "Missing Keywords AI API key. Please set KEYWORDS_API_KEY environment variable " +
-    "or pass Authorization header through MCP connection."
+    "Missing Keywords AI API key. Please provide it via:\n" +
+    "1. URL query parameter: ?apikey=YOUR_KEY\n" +
+    "2. Authorization header: Bearer YOUR_KEY\n" +
+    "3. KEYWORDS_API_KEY environment variable"
   );
 }
 
