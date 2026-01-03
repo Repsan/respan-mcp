@@ -1,0 +1,65 @@
+{
+  "name": "keywords-mcp",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) server for Keywords AI - supports HTTP streaming and local stdio modes",
+  "main": "dist/lib/index.js",
+  "type": "module",
+  "bin": {
+    "keywords-mcp": "dist/lib/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/lib/index.js",
+    "dev": "tsc && node dist/lib/index.js",
+    "clean": "rm -rf dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "usage": {
+    "mode1_public_http": {
+      "description": "Deploy once, customers pass their API keys via Authorization header",
+      "deploy": "vercel deploy --prod",
+      "url": "https://your-project.vercel.app/api/mcp",
+      "auth": "Authorization: Bearer CUSTOMER_KEYWORDS_AI_KEY"
+    },
+    "mode2_private_deployment": {
+      "description": "Each customer deploys their own instance with API key in environment",
+      "deploy": "vercel deploy --prod",
+      "env": "KEYWORDS_API_KEY=your_key (set in Vercel Dashboard)",
+      "url": "https://customer-project.vercel.app/api/mcp"
+    },
+    "mode3_local_stdio": {
+      "description": "Local use with Cursor, Claude Desktop, or other MCP clients",
+      "command": "npm run dev",
+      "config": "Set KEYWORDS_API_KEY in mcp.json env section"
+    }
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "keywords-ai",
+    "observability",
+    "llm",
+    "ai",
+    "http-streaming",
+    "vercel"
+  ],
+  "author": "Keywords AI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Keywords-AI/keywords-mcp.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.1",
+    "mcp-handler": "^1.0.4",
+    "zod": "^4.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
