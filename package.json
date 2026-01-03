@@ -10,7 +10,6 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "dev": "vercel dev",
     "stdio": "npm run build && node dist/lib/index.js",
     "start": "node dist/lib/index.js",
     "clean": "rm -rf dist"
