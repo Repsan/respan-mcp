@@ -1,77 +1,108 @@
-// api/mcp.ts
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerLogTools } from "../lib/observe/logs.js";
-import { registerTraceTools } from "../lib/observe/traces.js";
-import { registerUserTools } from "../lib/observe/users.js";
-import { registerPromptTools } from "../lib/develop/prompts.js";
-import { createMcpHandler } from "mcp-handler";
-import { setRequestApiKey } from "../lib/shared/client.js";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { registerLogTools } from '../lib/observe/logs.js';
+import { registerPromptTools } from '../lib/develop/prompts.js';
+import { registerTraceTools } from '../lib/observe/traces.js';
+import { registerUserTools } from '../lib/observe/users.js';
+import { setRequestApiKey } from '../lib/shared/client.js';
 
-// Create the base MCP handler (Web Fetch API)
-const mcpHandler = createMcpHandler((server: McpServer) => {
+// Create and configure MCP Server
+function createServer(): McpServer {
+  const server = new McpServer({
+    name: 'keywords-ai-mcp',
+    version: '1.0.0',
+  });
+
+  // Register all tools
   registerLogTools(server);
+  registerPromptTools(server);
   registerTraceTools(server);
   registerUserTools(server);
-  registerPromptTools(server);
-});
-// Convert Vercel Request to Web Request
-function toWebRequest(req: VercelRequest): Request {
-  const protocol = req.headers['x-forwarded-proto'] || 'http';
-  const host = req.headers['host'] || 'localhost';
-  const url = `${protocol}://${host}${req.url}`;
-  
-  // Convert body to string if it exists
-  let bodyString: string | undefined = undefined;
-  if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-    bodyString = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
-  }
-  
-  return new Request(url, {
-    method: req.method,
-    headers: req.headers as Record<string, string>,
-    body: bodyString,
-  });
+
+  return server;
 }
 
-// Export Vercel-compatible handler that extracts API key from query parameter
+// Session storage for stateful connections
+const sessions = new Map<string, { server: McpServer; transport: StreamableHTTPServerTransport }>();
+
+// Extract API key from request
+function extractApiKey(req: VercelRequest): string | undefined {
+  // Method 1: Authorization header (standard, recommended)
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.slice(7);
+  }
+  
+  // Method 2: Environment variable (for private deployments)
+  return process.env.KEYWORDS_API_KEY;
+}
+
+// Main handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log(`=== MCP Request: ${req.method} ${req.url} ===`);
+  console.log(`Body type: ${typeof req.body}, Body:`, JSON.stringify(req.body));
+
   try {
-    // Priority: 1. URL query parameter, 2. Environment variable
-    const apiKey = (req.query.apikey as string) || process.env.KEYWORDS_API_KEY;
+    // 1. Extract and validate API key
+    const apiKey = extractApiKey(req);
     
     if (!apiKey) {
-      return res.status(401).json({ 
-        error: "No API Key provided. Use ?apikey=YOUR_KEY or set KEYWORDS_API_KEY environment variable." 
+      return res.status(401).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32001,
+          message: 'Unauthorized: API key required. Use Authorization: Bearer YOUR_KEY header or set KEYWORDS_API_KEY environment variable.',
+        },
+        id: null,
       });
     }
-    
+
+    // Set API key for this request context
     setRequestApiKey(apiKey);
+
+    // 2. Get session ID from request header
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
     
-    // Convert to Web Request
-    const webRequest = toWebRequest(req);
+    let session = sessionId ? sessions.get(sessionId) : undefined;
     
-    // Call the MCP handler
-    const webResponse = await mcpHandler(webRequest);
-    
-    // Clean up API key
-    setRequestApiKey(null);
-    
-    // Convert Web Response back to Vercel Response
-    res.status(webResponse.status);
-    
-    // Copy headers
-    webResponse.headers.forEach((value, key) => {
-      res.setHeader(key, value);
-    });
-    
-    // Send body
-    const body = await webResponse.text();
-    res.send(body);
-    
+    if (!session) {
+      // Create new session with stateless transport (no session management)
+      const server = createServer();
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined, // Stateless mode
+      });
+      
+      // Connect server to transport
+      await server.connect(transport);
+      
+      // For stateless, we don't store sessions
+      session = { server, transport };
+      
+      console.log('Created stateless MCP session');
+    }
+
+    // 3. Handle the request using the transport
+    // Pass pre-parsed body since Vercel already consumed the stream
+    await session.transport.handleRequest(
+      req as any,  // VercelRequest extends IncomingMessage
+      res as any,  // VercelResponse extends ServerResponse
+      req.body     // Vercel pre-parses JSON body
+    );
+
   } catch (error) {
-    setRequestApiKey(null);
-    console.error('Handler error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('MCP Handler error:', error);
+    
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32603,
+          message: 'Internal server error',
+          data: error instanceof Error ? error.message : String(error),
+        },
+        id: null,
+      });
+    }
   }
 }

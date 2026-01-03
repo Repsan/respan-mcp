@@ -1,76 +1,197 @@
 # Keywords AI MCP Server
 
-Model Context Protocol (MCP) server for Keywords AI - access logs, prompts, traces, and users data.
+Model Context Protocol (MCP) server for [Keywords AI](https://keywordsai.co) - access logs, prompts, traces, and customer data directly from your AI assistant.
 
-## Quick Start
+## Features
 
-### For Local Use (Stdio Mode)
+- 📊 **Logs** - Query and filter LLM request logs with powerful filtering
+- 🔍 **Traces** - View complete execution traces with span trees
+- 👥 **Customers** - Access customer data and budget information  
+- 📝 **Prompts** - Manage prompt templates and versions
+
+## Installation
 
 ```bash
+git clone https://github.com/Keywords-AI/keywordsai-mcp.git
+cd keywordsai-mcp
 npm install
 npm run build
-npm run dev
 ```
 
-This runs the MCP server in stdio mode for use with CLI MCP clients like Claude Desktop.
+## Usage Modes
 
-### For Vercel Deployment (HTTP/SSE Mode)
+### Mode 1: Local Stdio (Recommended for Personal Use)
 
-The `api/mcp.ts` file is configured for Vercel deployment:
+Run the MCP server locally via stdio - simplest setup for personal development.
 
+**Step 1:** Build the project
 ```bash
-vercel deploy
+npm run build
 ```
 
-After deployment, your MCP server will be available at:
+**Step 2:** Configure Cursor/Claude Desktop
+
+Add to your MCP config file:
+- **Cursor**: `~/.cursor/mcp.json`
+- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "command": "node",
+      "args": ["/absolute/path/to/keywordsai-mcp/dist/lib/index.js"],
+      "env": {
+        "KEYWORDS_API_KEY": "your_keywords_ai_api_key"
+      }
+    }
+  }
+}
 ```
-https://your-project.vercel.app/api/mcp
-```
 
-## Configuration
+---
 
-Set your Keywords AI API key as an environment variable:
+### Mode 2: HTTP Streaming - Private Deployment
 
+Deploy once to Vercel with your API key stored as environment variable. No client-side key needed.
+
+**Step 1:** Deploy to Vercel
 ```bash
-export KEYWORDS_API_KEY=your_api_key_here
+vercel deploy --prod
 ```
 
-For Vercel, add it in your project settings as an environment variable.
+**Step 2:** Set environment variable in Vercel Dashboard
+- Go to Settings → Environment Variables
+- Add `KEYWORDS_API_KEY` = `your_keywords_ai_api_key`
+
+**Step 3:** Configure Cursor/Claude Desktop
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "url": "https://your-project.vercel.app/mcp"
+    }
+  }
+}
+```
+
+---
+
+### Mode 3: HTTP Streaming - Public Service
+
+Deploy as a shared service where each user provides their own API key via Authorization header.
+
+**Step 1:** Deploy to Vercel (without environment variable)
+```bash
+vercel deploy --prod
+```
+
+**Step 2:** Configure Cursor/Claude Desktop with Authorization header
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "url": "https://your-project.vercel.app/mcp",
+      "headers": {
+        "Authorization": "Bearer your_keywords_ai_api_key"
+      }
+    }
+  }
+}
+```
+
+---
 
 ## Available Tools
 
 ### Logs
-- `list_logs` - Get request logs with filtering
-- `get_log_detail` - Get detailed log information
 
-### Traces  
-- `list_traces` - Get traces with filtering
-- `get_trace_tree` - Get trace tree structure
+| Tool | Description |
+|------|-------------|
+| `list_logs` | List and filter LLM request logs with powerful query capabilities |
+| `get_log_detail` | Retrieve complete details of a single log by unique ID |
 
-### Users
-- `list_customers` - Get customer list
-- `get_customer_budget_detail` - Get customer details
+**Filter Examples:**
+```json
+{
+  "cost": {"operator": "gt", "value": [0.01]},
+  "model": {"operator": "", "value": ["gpt-4"]},
+  "customer_identifier": {"operator": "contains", "value": ["user"]},
+  "metadata__session_id": {"operator": "", "value": ["abc123"]}
+}
+```
+
+**Filter Operators:** `""` (equal), `not`, `lt`, `lte`, `gt`, `gte`, `contains`, `icontains`, `startswith`, `endswith`, `in`, `isnull`
+
+### Traces
+
+| Tool | Description |
+|------|-------------|
+| `list_traces` | List and filter traces with sorting and pagination |
+| `get_trace_tree` | Retrieve complete hierarchical span tree of a trace |
+
+### Customers
+
+| Tool | Description |
+|------|-------------|
+| `list_customers` | List customers with pagination and sorting |
+| `get_customer_detail` | Get customer details including budget usage |
 
 ### Prompts
-- `list_prompts` - Get all prompts
-- `get_prompt_detail` - Get prompt details
-- `list_prompt_versions` - Get prompt versions
-- `get_prompt_version_detail` - Get version details
 
-## File Structure
+| Tool | Description |
+|------|-------------|
+| `list_prompts` | List all prompts in your organization |
+| `get_prompt_detail` | Get detailed prompt information |
+| `list_prompt_versions` | List all versions of a prompt |
+| `get_prompt_version_detail` | Get specific version details |
+
+## Project Structure
 
 ```
-lib/
-  index.ts          - Stdio entry point (local development)
-  observe/          - Log, trace, user tools
-  develop/          - Prompt management tools
-  shared/          - Shared utilities
-api/
-  mcp.ts           - HTTP entry point (Vercel deployment)
+keywordsai-mcp/
+├── api/
+│   └── mcp.ts              # HTTP entry point (Vercel deployment)
+├── lib/
+│   ├── index.ts            # Stdio entry point (local development)
+│   ├── observe/
+│   │   ├── logs.ts         # Log tools
+│   │   ├── traces.ts       # Trace tools
+│   │   └── users.ts        # Customer tools
+│   ├── develop/
+│   │   └── prompts.ts      # Prompt tools
+│   └── shared/
+│       └── client.ts       # API client utilities
+├── vercel.json             # Vercel configuration
+├── tsconfig.json           # TypeScript configuration
+└── package.json
 ```
 
-## Notes
+## Local Development
 
-- The `lib/index.ts` uses stdio transport for local CLI integration
-- The `api/mcp.ts` uses mcp-handler for Vercel HTTP/SSE deployment
-- For HTTP testing, deploy to Vercel - local HTTP servers are not supported by mcp-handler
+```bash
+# Build the project
+npm run build
+
+# Run in stdio mode (for testing with MCP clients)
+npm run stdio
+
+# Run Vercel dev server (for HTTP testing)
+npx vercel dev
+```
+
+### Testing with MCP Inspector
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+Then connect to `http://localhost:3000/mcp` with your Authorization header.
+
+## API Key
+
+Get your Keywords AI API key from [platform.keywordsai.co](https://platform.keywordsai.co/platform/api/api-keys)
+
+## License
+
+MIT

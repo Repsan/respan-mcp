@@ -15,20 +15,30 @@
     "clean": "rm -rf dist"
   },
   "usage": {
-    "mode1_public_http": {
-      "description": "方案 A：部署一次，客户通过 URL 参数传递 API Key",
+    "mode1_http_streaming": {
+      "description": "HTTP Streamable 模式 - 通过 Authorization Header 传递 API Key",
       "deploy": "vercel deploy --prod",
-      "url": "https://your-project.vercel.app/api/mcp?apikey=YOUR_KEY",
-      "auth": "URL 参数: apikey"
+      "url": "https://your-project.vercel.app/mcp",
+      "auth": "Authorization: Bearer YOUR_KEYWORDS_AI_API_KEY",
+      "cursor_config": {
+        "mcpServers": {
+          "keywords-ai": {
+            "url": "https://your-project.vercel.app/mcp",
+            "headers": {
+              "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
+            }
+          }
+        }
+      }
     },
     "mode2_private_deployment": {
-      "description": "方案 B：客户自行部署，API Key 存在 Vercel 环境变量中",
+      "description": "私有部署 - API Key 存在 Vercel 环境变量中（无需客户端传递）",
       "deploy": "vercel deploy --prod",
       "env": "KEYWORDS_API_KEY (在 Vercel Dashboard 设置)",
-      "url": "https://customer-project.vercel.app/api/mcp"
+      "url": "https://customer-project.vercel.app/mcp"
     },
     "mode3_local_stdio": {
-      "description": "方案 C：在 Cursor/Claude Desktop 本地通过 stdio 运行",
+      "description": "本地 stdio 模式 - 在 Cursor/Claude Desktop 本地运行",
       "command": "node {项目绝对路径}/dist/lib/index.js",
       "config": "先运行 npm run build，并在环境变量中设置 KEYWORDS_API_KEY"
     }

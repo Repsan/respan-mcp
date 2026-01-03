@@ -6,4 +6,3 @@ export declare function keywordsRequest(endpoint: string, extra: RequestHandlerE
     queryParams?: Record<string, any>;
     body?: any;
 }): Promise<unknown>;
-//# sourceMappingURL=client.d.ts.map

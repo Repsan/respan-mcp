@@ -42,4 +42,3 @@ export async function keywordsRequest(endpoint, extra, options = {}) {
     }
     return await response.json();
 }
-//# sourceMappingURL=client.js.map
