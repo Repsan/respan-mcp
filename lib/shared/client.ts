@@ -11,27 +11,15 @@ export function setRequestApiKey(apiKey: string | null) {
 
 /**
  * Get API Key from multiple sources
- * Priority: Query parameter > Authorization header > KEYWORDS_API_KEY environment variable
+ * Priority: Query parameter (HTTP mode) > KEYWORDS_API_KEY environment variable (stdio mode)
  */
 function getApiKey(extra: RequestHandlerExtra<ServerRequest, ServerNotification>): string {
-  // 1. Try to get from query parameter (stored by the handler)
+  // 1. Try to get from query parameter (set by api/mcp.ts in HTTP mode)
   if (requestApiKey) {
     return requestApiKey;
   }
 
-  // 2. Try to get from request header (if MCP client passes through Authorization)
-  const headers = extra.requestInfo?.headers;
-  if (headers) {
-    const authHeader = headers["authorization"] || headers["Authorization"];
-    if (authHeader) {
-      const authValue = Array.isArray(authHeader) ? authHeader[0] : authHeader;
-      if (authValue && authValue.startsWith("Bearer ")) {
-        return authValue.substring(7);
-      }
-    }
-  }
-
-  // 3. Get from environment variable (fallback for private deployments)
+  // 2. Get from environment variable (used in stdio mode or as fallback)
   const envApiKey = process.env.KEYWORDS_API_KEY;
   if (envApiKey) {
     return envApiKey;
@@ -39,9 +27,8 @@ function getApiKey(extra: RequestHandlerExtra<ServerRequest, ServerNotification>
 
   throw new Error(
     "Missing Keywords AI API key. Please provide it via:\n" +
-    "1. URL query parameter: ?apikey=YOUR_KEY\n" +
-    "2. Authorization header: Bearer YOUR_KEY\n" +
-    "3. KEYWORDS_API_KEY environment variable"
+    "- HTTP mode: URL query parameter (?apikey=YOUR_KEY)\n" +
+    "- Stdio mode: KEYWORDS_API_KEY environment variable"
   );
 }
 
