@@ -20,9 +20,32 @@ npm run build
 
 ## Usage Modes
 
-### Mode 1: Local Stdio (Recommended for Personal Use)
+### Mode 1: HTTP Streaming - Public Service
 
-Run the MCP server locally via stdio - simplest setup for personal development.
+Use the hosted endpoint where each user provides their own API key via Authorization header.
+
+Configure Cursor/Claude Desktop:
+- **Cursor**: `~/.cursor/mcp.json`
+- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "url": "https://mcp.keywordsai.co/api/mcp",
+      "headers": {
+        "Authorization": "Bearer your_keywords_ai_api_key"
+      }
+    }
+  }
+}
+```
+
+---
+
+### Mode 2: Local Stdio (Personal Use)
+
+Run the MCP server locally via stdio - for personal development.
 
 **Step 1:** Build the project
 ```bash
@@ -30,10 +53,6 @@ npm run build
 ```
 
 **Step 2:** Configure Cursor/Claude Desktop
-
-Add to your MCP config file:
-- **Cursor**: `~/.cursor/mcp.json`
-- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 ```json
 {
@@ -51,12 +70,14 @@ Add to your MCP config file:
 
 ---
 
-### Mode 2: HTTP Streaming - Private Deployment
+### Mode 3: HTTP Streaming - Private Deployment
 
-Deploy once to Vercel with your API key stored as environment variable. No client-side key needed.
+Deploy to Vercel with your API key stored as environment variable. No client-side key needed.
 
-**Step 1:** Deploy to Vercel
+**Step 1:** Clone and deploy to Vercel
 ```bash
+git clone https://github.com/Keywords-AI/keywordsai-mcp.git
+cd keywordsai-mcp
 vercel deploy --prod
 ```
 
@@ -70,31 +91,6 @@ vercel deploy --prod
   "mcpServers": {
     "keywords-ai": {
       "url": "https://your-project.vercel.app/mcp"
-    }
-  }
-}
-```
-
----
-
-### Mode 3: HTTP Streaming - Public Service
-
-Deploy as a shared service where each user provides their own API key via Authorization header.
-
-**Step 1:** Deploy to Vercel (without environment variable)
-```bash
-vercel deploy --prod
-```
-
-**Step 2:** Configure Cursor/Claude Desktop with Authorization header
-```json
-{
-  "mcpServers": {
-    "keywords-ai": {
-      "url": "https://your-project.vercel.app/mcp",
-      "headers": {
-        "Authorization": "Bearer your_keywords_ai_api_key"
-      }
     }
   }
 }
