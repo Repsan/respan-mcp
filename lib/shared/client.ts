@@ -2,11 +2,16 @@
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 
-// Store API key from query parameter for the current request
+// Store API key and base URL from HTTP headers for the current request
 let requestApiKey: string | null = null;
+let requestBaseUrl: string | null = null;
 
 export function setRequestApiKey(apiKey: string | null) {
   requestApiKey = apiKey;
+}
+
+export function setRequestBaseUrl(baseUrl: string | null) {
+  requestBaseUrl = baseUrl;
 }
 
 /**
@@ -34,13 +39,18 @@ function getApiKey(extra: RequestHandlerExtra<ServerRequest, ServerNotification>
 
 /**
  * Get base URL for Keywords AI API
+ * Priority: X-Keywords-Base-URL header (HTTP mode) > KEYWORDS_API_BASE_URL env var > default
  * Default: https://api.keywordsai.co/api
- * Override: Set KEYWORDS_API_BASE_URL environment variable
  * Examples:
  *   - Enterprise: https://endpoint.keywordsai.co/api
  *   - Local dev:  http://localhost:8000/api
  */
 function getBaseUrl(): string {
+  // 1. From HTTP header (set by api/mcp.ts)
+  if (requestBaseUrl) {
+    return requestBaseUrl;
+  }
+  // 2. From environment variable (stdio mode or server default)
   return process.env.KEYWORDS_API_BASE_URL || "https://api.keywordsai.co/api";
 }
 

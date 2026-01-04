@@ -9,51 +9,79 @@ Model Context Protocol (MCP) server for [Keywords AI](https://keywordsai.co) - a
 - **Customers** - Access customer data and budget information  
 - **Prompts** - Manage prompt templates and versions
 
-## Installation
+---
 
-```bash
-git clone https://github.com/Keywords-AI/keywordsai-mcp.git
-cd keywordsai-mcp
-npm install
-npm run build
-```
+## Quick Start
 
-## Usage Modes
+### Option 1: Public HTTP (Recommended)
 
-### Mode 1: HTTP Streaming - Public Service
+The fastest way to get started - no installation required.
 
-Use the hosted endpoint where each user provides their own API key via Authorization header.
+1. Get your API key from [platform.keywordsai.co](https://platform.keywordsai.co/platform/api/api-keys)
 
-Configure Cursor/Claude Desktop:
-- **Cursor**: `~/.cursor/mcp.json`
-- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+2. Add to your MCP config file:
 
+**Cursor** (`~/.cursor/mcp.json`):
 ```json
 {
   "mcpServers": {
     "keywords-ai": {
       "url": "https://mcp.keywordsai.co/api/mcp",
       "headers": {
-        "Authorization": "Bearer your_keywords_ai_api_key"
+        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
       }
     }
   }
 }
 ```
 
+**Claude Desktop** (macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "url": "https://mcp.keywordsai.co/api/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
+      }
+    }
+  }
+}
+```
+
+**Claude Desktop** (Windows: `%APPDATA%\Claude\claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "url": "https://mcp.keywordsai.co/api/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
+      }
+    }
+  }
+}
+```
+
+3. Restart Cursor/Claude Desktop
+
 ---
 
-### Mode 2: Local Stdio (Personal Use)
+### Option 2: Local Stdio
 
-Run the MCP server locally via stdio - for personal development.
+Run the MCP server locally - for personal development or offline use.
 
-**Step 1:** Build the project
+**Prerequisites:** Node.js v18+, Git
+
 ```bash
+# 1. Clone and build
+git clone https://github.com/Keywords-AI/keywordsai-mcp.git
+cd keywordsai-mcp
+npm install
 npm run build
 ```
 
-**Step 2:** Configure Cursor/Claude Desktop
-
+**Cursor** (`~/.cursor/mcp.json`):
 ```json
 {
   "mcpServers": {
@@ -61,31 +89,63 @@ npm run build
       "command": "node",
       "args": ["/absolute/path/to/keywordsai-mcp/dist/lib/index.js"],
       "env": {
-        "KEYWORDS_API_KEY": "your_keywords_ai_api_key"
+        "KEYWORDS_API_KEY": "YOUR_KEYWORDS_AI_API_KEY"
       }
     }
   }
 }
 ```
 
+**Claude Desktop** (macOS):
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "command": "node",
+      "args": ["/Users/yourname/keywordsai-mcp/dist/lib/index.js"],
+      "env": {
+        "KEYWORDS_API_KEY": "YOUR_KEYWORDS_AI_API_KEY"
+      }
+    }
+  }
+}
+```
+
+**Claude Desktop** (Windows):
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "command": "node",
+      "args": ["C:/Users/yourname/keywordsai-mcp/dist/lib/index.js"],
+      "env": {
+        "KEYWORDS_API_KEY": "YOUR_KEYWORDS_AI_API_KEY"
+      }
+    }
+  }
+}
+```
+
+> **Note:** Replace the path with your actual installation path. After updating code, run `npm run build` again.
+
 ---
 
-### Mode 3: HTTP Streaming - Private Deployment
+### Option 3: Private HTTP (Teams)
 
-Deploy to Vercel with your API key stored as environment variable. No client-side key needed.
+Deploy your own instance to Vercel - perfect for teams sharing a single deployment.
 
-**Step 1:** Clone and deploy to Vercel
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Keywords-AI/keywordsai-mcp&env=KEYWORDS_API_KEY&envDescription=Your%20Keywords%20AI%20API%20key&envLink=https://platform.keywordsai.co/platform/api/api-keys)
+
+Or deploy manually:
 ```bash
 git clone https://github.com/Keywords-AI/keywordsai-mcp.git
 cd keywordsai-mcp
 vercel deploy --prod
 ```
 
-**Step 2:** Set environment variable in Vercel Dashboard
-- Go to Settings → Environment Variables
-- Add `KEYWORDS_API_KEY` = `your_keywords_ai_api_key`
+Then set `KEYWORDS_API_KEY` in Vercel Dashboard → Settings → Environment Variables.
 
-**Step 3:** Configure Cursor/Claude Desktop
+Share this config with your team:
 ```json
 {
   "mcpServers": {
@@ -95,6 +155,55 @@ vercel deploy --prod
   }
 }
 ```
+
+---
+
+## Enterprise Configuration
+
+For enterprise users with a custom API endpoint, override the default base URL:
+
+### HTTP Mode
+
+Add the `KEYWORDS_API_BASE_URL` header:
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "url": "https://mcp.keywordsai.co/api/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY",
+        "KEYWORDS_API_BASE_URL": "https://endpoint.keywordsai.co/api"
+      }
+    }
+  }
+}
+```
+
+### Stdio Mode
+
+Add the `KEYWORDS_API_BASE_URL` environment variable:
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "command": "node",
+      "args": ["/path/to/keywordsai-mcp/dist/lib/index.js"],
+      "env": {
+        "KEYWORDS_API_KEY": "YOUR_API_KEY",
+        "KEYWORDS_API_BASE_URL": "https://endpoint.keywordsai.co/api"
+      }
+    }
+  }
+}
+```
+
+### Supported Endpoints
+
+| Endpoint | URL |
+|----------|-----|
+| Default (Cloud) | `https://api.keywordsai.co/api` |
+| Enterprise | `https://endpoint.keywordsai.co/api` |
+| Local development | `http://localhost:8000/api` |
 
 ---
 
@@ -142,6 +251,8 @@ vercel deploy --prod
 | `list_prompt_versions` | List all versions of a prompt |
 | `get_prompt_version_detail` | Get specific version details |
 
+---
+
 ## Project Structure
 
 ```
@@ -158,10 +269,14 @@ keywordsai-mcp/
 │   │   └── prompts.ts      # Prompt tools
 │   └── shared/
 │       └── client.ts       # API client utilities
+├── public/
+│   └── index.html          # Landing page (redirects to docs)
 ├── vercel.json             # Vercel configuration
 ├── tsconfig.json           # TypeScript configuration
 └── package.json
 ```
+
+---
 
 ## Local Development
 
@@ -184,35 +299,34 @@ npx @modelcontextprotocol/inspector
 
 Then connect to `http://localhost:3000/mcp` with your Authorization header.
 
-## Configuration
+---
 
-### API Key
+## Troubleshooting
 
-Get your Keywords AI API key from [platform.keywordsai.co](https://platform.keywordsai.co/platform/api/api-keys)
+### MCP server not showing up
 
-### Custom API Endpoint (Optional)
+1. Verify your config file path is correct
+2. Check JSON syntax (trailing commas, missing quotes)
+3. Restart your AI tool completely
+4. For stdio: ensure the path to `index.js` is absolute and correct
 
-By default, the server uses `https://api.keywordsai.co/api`. For enterprise or local development, you can override this:
+### Authentication errors
 
-```json
-{
-  "mcpServers": {
-    "keywords-ai": {
-      "command": "node",
-      "args": ["/path/to/keywordsai-mcp/dist/lib/index.js"],
-      "env": {
-        "KEYWORDS_API_KEY": "your_api_key",
-        "KEYWORDS_API_BASE_URL": "https://endpoint.keywordsai.co/api"
-      }
-    }
-  }
-}
-```
+1. Verify your API key at [platform.keywordsai.co](https://platform.keywordsai.co/platform/api/api-keys)
+2. HTTP mode: ensure format is `Authorization: Bearer YOUR_KEY`
+3. Stdio mode: check `KEYWORDS_API_KEY` is set in the `env` section
 
-**Supported endpoints:**
-- Default: `https://api.keywordsai.co/api`
-- Enterprise: `https://endpoint.keywordsai.co/api`
-- Local dev: `http://localhost:8000/api`
+### Connection issues
+
+1. Check internet connection
+2. For enterprise: verify `KEYWORDS_API_BASE_URL` is correct
+3. For private deployment: check Vercel logs for errors
+
+---
+
+## Documentation
+
+Full documentation available at [docs.keywordsai.co/documentation/resources/mcp](https://docs.keywordsai.co/documentation/resources/mcp)
 
 ## License
 

@@ -5,7 +5,7 @@ import { registerLogTools } from '../lib/observe/logs.js';
 import { registerPromptTools } from '../lib/develop/prompts.js';
 import { registerTraceTools } from '../lib/observe/traces.js';
 import { registerUserTools } from '../lib/observe/users.js';
-import { setRequestApiKey } from '../lib/shared/client.js';
+import { setRequestApiKey, setRequestBaseUrl } from '../lib/shared/client.js';
 
 // Create and configure MCP Server
 function createServer(): McpServer {
@@ -38,6 +38,18 @@ function extractApiKey(req: VercelRequest): string | undefined {
   return process.env.KEYWORDS_API_KEY;
 }
 
+// Extract base URL override from request header
+function extractBaseUrl(req: VercelRequest): string | undefined {
+  // KEYWORDS_API_BASE_URL header for enterprise/custom endpoints
+  const baseUrlHeader = req.headers['keywords-api-base-url'] as string | undefined;
+  if (baseUrlHeader) {
+    return baseUrlHeader;
+  }
+  
+  // Fallback to environment variable
+  return process.env.KEYWORDS_API_BASE_URL;
+}
+
 // Main handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log(`=== MCP Request: ${req.method} ${req.url} ===`);
@@ -58,8 +70,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Set API key for this request context
+    // Set API key and base URL for this request context
     setRequestApiKey(apiKey);
+    setRequestBaseUrl(extractBaseUrl(req));
 
     // 2. Get session ID from request header
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
