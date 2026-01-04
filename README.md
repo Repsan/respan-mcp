@@ -164,7 +164,7 @@ For enterprise users with a custom API endpoint, override the default base URL:
 
 ### HTTP Mode
 
-Add the `KEYWORDS_API_BASE_URL` header:
+Add the `keywords-api-base-url` header:
 ```json
 {
   "mcpServers": {
@@ -172,7 +172,7 @@ Add the `KEYWORDS_API_BASE_URL` header:
       "url": "https://mcp.keywordsai.co/api/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY",
-        "KEYWORDS_API_BASE_URL": "https://endpoint.keywordsai.co/api"
+        "keywords-api-base-url": "https://endpoint.keywordsai.co/api"
       }
     }
   }
