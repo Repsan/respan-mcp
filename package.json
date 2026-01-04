@@ -18,12 +18,12 @@
     "mode1_http_streaming": {
       "description": "HTTP Streamable 模式 - 通过 Authorization Header 传递 API Key",
       "deploy": "vercel deploy --prod",
-      "url": "https://your-project.vercel.app/mcp",
+      "url": "https://mcp.keywordsai.co/api/mcp",
       "auth": "Authorization: Bearer YOUR_KEYWORDS_AI_API_KEY",
       "cursor_config": {
         "mcpServers": {
           "keywords-ai": {
-            "url": "https://your-project.vercel.app/mcp",
+            "url": "https://mcp.keywordsai.co/api/mcp",
             "headers": {
               "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
             }

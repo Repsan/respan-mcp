@@ -32,6 +32,18 @@ function getApiKey(extra: RequestHandlerExtra<ServerRequest, ServerNotification>
   );
 }
 
+/**
+ * Get base URL for Keywords AI API
+ * Default: https://api.keywordsai.co/api
+ * Override: Set KEYWORDS_API_BASE_URL environment variable
+ * Examples:
+ *   - Enterprise: https://endpoint.keywordsai.co/api
+ *   - Local dev:  http://localhost:8000/api
+ */
+function getBaseUrl(): string {
+  return process.env.KEYWORDS_API_BASE_URL || "https://api.keywordsai.co/api";
+}
+
 export async function keywordsRequest(
   endpoint: string, 
   extra: RequestHandlerExtra<ServerRequest, ServerNotification>, 
@@ -42,6 +54,7 @@ export async function keywordsRequest(
   } = {}
 ) {
   const apiKey = getApiKey(extra);
+  const baseUrl = getBaseUrl();
   const { method = "GET", queryParams = {}, body } = options;
   
   // Filter out undefined values
@@ -50,7 +63,7 @@ export async function keywordsRequest(
   );
   
   const queryString = new URLSearchParams(filteredParams).toString();
-  const url = `https://api.keywordsai.co/api/${endpoint}${queryString ? `?${queryString}` : ""}`;
+  const url = `${baseUrl}/${endpoint}${queryString ? `?${queryString}` : ""}`;
 
   const response = await fetch(url, {
     method,

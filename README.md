@@ -184,9 +184,35 @@ npx @modelcontextprotocol/inspector
 
 Then connect to `http://localhost:3000/mcp` with your Authorization header.
 
-## API Key
+## Configuration
+
+### API Key
 
 Get your Keywords AI API key from [platform.keywordsai.co](https://platform.keywordsai.co/platform/api/api-keys)
+
+### Custom API Endpoint (Optional)
+
+By default, the server uses `https://api.keywordsai.co/api`. For enterprise or local development, you can override this:
+
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "command": "node",
+      "args": ["/path/to/keywordsai-mcp/dist/lib/index.js"],
+      "env": {
+        "KEYWORDS_API_KEY": "your_api_key",
+        "KEYWORDS_API_BASE_URL": "https://endpoint.keywordsai.co/api"
+      }
+    }
+  }
+}
+```
+
+**Supported endpoints:**
+- Default: `https://api.keywordsai.co/api`
+- Enterprise: `https://endpoint.keywordsai.co/api`
+- Local dev: `http://localhost:8000/api`
 
 ## License
 
