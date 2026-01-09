@@ -1,7 +1,11 @@
-// Store API key from query parameter for the current request
+// Store API key and base URL from HTTP headers for the current request
 let requestApiKey = null;
+let requestBaseUrl = null;
 export function setRequestApiKey(apiKey) {
     requestApiKey = apiKey;
+}
+export function setRequestBaseUrl(baseUrl) {
+    requestBaseUrl = baseUrl;
 }
 /**
  * Get API Key from multiple sources
@@ -21,13 +25,30 @@ function getApiKey(extra) {
         "- HTTP mode: URL query parameter (?apikey=YOUR_KEY)\n" +
         "- Stdio mode: KEYWORDS_API_KEY environment variable");
 }
+/**
+ * Get base URL for Keywords AI API
+ * Priority: X-Keywords-Base-URL header (HTTP mode) > KEYWORDS_API_BASE_URL env var > default
+ * Default: https://api.keywordsai.co/api
+ * Examples:
+ *   - Enterprise: https://endpoint.keywordsai.co/api
+ *   - Local dev:  http://localhost:8000/api
+ */
+function getBaseUrl() {
+    // 1. From HTTP header (set by api/mcp.ts)
+    if (requestBaseUrl) {
+        return requestBaseUrl;
+    }
+    // 2. From environment variable (stdio mode or server default)
+    return process.env.KEYWORDS_API_BASE_URL || "https://api.keywordsai.co/api";
+}
 export async function keywordsRequest(endpoint, extra, options = {}) {
     const apiKey = getApiKey(extra);
+    const baseUrl = getBaseUrl();
     const { method = "GET", queryParams = {}, body } = options;
     // Filter out undefined values
     const filteredParams = Object.fromEntries(Object.entries(queryParams).filter(([_, v]) => v !== undefined));
     const queryString = new URLSearchParams(filteredParams).toString();
-    const url = `https://api.keywordsai.co/api/${endpoint}${queryString ? `?${queryString}` : ""}`;
+    const url = `${baseUrl}/${endpoint}${queryString ? `?${queryString}` : ""}`;
     const response = await fetch(url, {
         method,
         headers: {
