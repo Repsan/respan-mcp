@@ -14,11 +14,11 @@ Retrieves a paginated list of customers who have made API requests through Keywo
 QUERY PARAMETERS:
 - page_size: Number of customers per page (max 50 for MCP, API supports up to 1000)
 - page: Page number (default 1)
-- sort_by: Sort field with optional '-' prefix for descending
-  Options: customer_identifier, email, first_seen, last_active_timeframe, 
+- sort_by: Sort field with optional - prefix for descending. IMPORTANT: Do NOT wrap the value in quotes, pass the raw value directly.
+  Options: customer_identifier, email, first_seen, last_active_timeframe,
            number_of_requests, total_cost, total_tokens, active_days,
            average_latency, average_ttft
-  Examples: "-total_cost" (highest spending first), "-number_of_requests" (most active first)
+  Examples: -total_cost (highest spending first), -number_of_requests (most active first)
 - environment: Filter by environment ("prod" or "test")
 
 RESPONSE FIELDS:
@@ -40,14 +40,17 @@ Use this to identify top users by cost, most active users, or find specific cust
     {
       page_size: z.number().optional().describe("Customers per page (1-50, default 20)"),
       page: z.number().optional().describe("Page number (default 1)"),
-      sort_by: z.string().optional().describe("Sort field: 'customer_identifier', '-total_cost', '-number_of_requests', 'email', '-first_seen', '-last_active_timeframe', '-active_days', '-total_tokens'. Prefix '-' for descending."),
+      sort_by: z.string().optional().describe("Sort field. IMPORTANT: pass raw value without quotes. Valid values: customer_identifier, -total_cost, -number_of_requests, email, -first_seen, -last_active_timeframe, -active_days, -total_tokens. Prefix - for descending."),
       environment: z.string().optional().describe("Filter by environment: 'prod' or 'test'")
     },
     async ({ page_size = 20, page = 1, sort_by = "-first_seen", environment }, extra) => {
-      const queryParams: Record<string, any> = { 
-        page_size: Math.min(page_size, 50), 
+      // Strip surrounding quotes that LLMs sometimes add (e.g. '"-first_seen"' -> '-first_seen')
+      const cleanSortBy = sort_by.replace(/^["']|["']$/g, "");
+
+      const queryParams: Record<string, any> = {
+        page_size: Math.min(page_size, 50),
         page,
-        sort_by 
+        sort_by: cleanSortBy
       };
       
       if (environment) queryParams.environment = environment;

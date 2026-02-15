@@ -14,10 +14,10 @@ A trace represents a complete workflow execution containing multiple spans (indi
 QUERY PARAMETERS:
 - page_size: Results per page (max 20 for MCP, API supports up to 1000)
 - page: Page number (default 1)
-- sort_by: Sort field with optional '-' prefix for descending
-  Options: timestamp, start_time, end_time, duration, total_cost, total_tokens, 
+- sort_by: Sort field with optional - prefix for descending. IMPORTANT: Do NOT wrap the value in quotes, pass the raw value directly.
+  Options: timestamp, start_time, end_time, duration, total_cost, total_tokens,
            total_prompt_tokens, total_completion_tokens, span_count, llm_call_count, error_count
-  Example: "-total_cost" (highest cost first)
+  Example: -total_cost (highest cost first)
 - start_time: ISO 8601 datetime (default: 1 hour ago)
 - end_time: ISO 8601 datetime (default: current time)
 - environment: Filter by environment (e.g., "production", "test")
@@ -75,7 +75,7 @@ RESPONSE FIELDS:
     {
       page_size: z.number().optional().describe("Results per page (1-20, default 10)"),
       page: z.number().optional().describe("Page number (default 1)"),
-      sort_by: z.string().optional().describe("Sort field: 'timestamp', '-timestamp', 'duration', '-duration', 'total_cost', '-total_cost', 'error_count', '-error_count', etc. Prefix '-' for descending."),
+      sort_by: z.string().optional().describe("Sort field. IMPORTANT: pass raw value without quotes. Valid values: timestamp, -timestamp, duration, -duration, total_cost, -total_cost, error_count, -error_count. Prefix - for descending."),
       start_time: z.string().optional().describe("Start time in ISO 8601 format (e.g., '2024-01-15T00:00:00Z'). Default: 1 hour ago"),
       end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
       environment: z.string().optional().describe("Filter by environment (e.g., 'production', 'test')"),
@@ -86,11 +86,14 @@ RESPONSE FIELDS:
     },
     async ({ page_size = 10, page = 1, sort_by = "-timestamp", start_time, end_time, environment, filters }, extra) => {
       const limit = Math.min(page_size, 20);
-      
-      const queryParams: Record<string, any> = { 
-        page_size: limit, 
+
+      // Strip surrounding quotes that LLMs sometimes add (e.g. '"-timestamp"' -> '-timestamp')
+      const cleanSortBy = sort_by.replace(/^["']|["']$/g, "");
+
+      const queryParams: Record<string, any> = {
+        page_size: limit,
         page,
-        sort_by 
+        sort_by: cleanSortBy
       };
       
       if (start_time) queryParams.start_time = start_time;

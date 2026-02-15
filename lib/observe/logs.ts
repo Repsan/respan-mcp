@@ -12,9 +12,9 @@ export function registerLogTools(server: McpServer) {
 QUERY PARAMETERS:
 - page_size: Number of logs per page (max 50 for MCP, API supports up to 1000)
 - page: Page number (default 1)
-- sort_by: Sort field with optional '-' prefix for descending
+- sort_by: Sort field with optional - prefix for descending. IMPORTANT: Do NOT wrap the value in quotes, pass the raw value directly.
   Options: id, cost, latency, time_to_first_token, prompt_tokens, completion_tokens, all_tokens
-  Example: "-cost" (highest cost first), "latency" (lowest latency first)
+  Example: -cost (highest cost first), latency (lowest latency first)
 - start_time: ISO 8601 datetime (default: 1 hour ago)
 - end_time: ISO 8601 datetime (default: current time)
 - is_test: "true" or "false" - filter by environment
@@ -52,7 +52,7 @@ EXAMPLE FILTERS:
     {
       page_size: z.number().optional().describe("Number of logs per page (1-50, default 20)"),
       page: z.number().optional().describe("Page number (default 1)"),
-      sort_by: z.string().optional().describe("Sort field: 'id', '-id', 'cost', '-cost', 'latency', '-latency', 'prompt_tokens', 'completion_tokens', 'time_to_first_token'. Prefix '-' for descending."),
+      sort_by: z.string().optional().describe("Sort field. IMPORTANT: pass raw value without quotes. Valid values: id, -id, cost, -cost, latency, -latency, prompt_tokens, completion_tokens, time_to_first_token. Prefix - for descending."),
       start_time: z.string().optional().describe("Start time in ISO 8601 format (e.g., '2024-01-15T00:00:00Z'). Default: 1 hour ago"),
       end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
       is_test: z.boolean().optional().describe("Filter by test environment (true) or production (false)"),
@@ -64,12 +64,15 @@ EXAMPLE FILTERS:
     },
     async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters }, extra) => {
       // Enforce safety limit to prevent context overflow
-      const limit = Math.min(page_size, 50); 
-      
-      const queryParams: Record<string, any> = { 
-        page_size: limit, 
+      const limit = Math.min(page_size, 50);
+
+      // Strip surrounding quotes that LLMs sometimes add (e.g. '"-id"' -> '-id')
+      const cleanSortBy = sort_by.replace(/^["']|["']$/g, "");
+
+      const queryParams: Record<string, any> = {
+        page_size: limit,
         page,
-        sort_by 
+        sort_by: cleanSortBy
       };
       
       if (start_time) queryParams.start_time = start_time;
