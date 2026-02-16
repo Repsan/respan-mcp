@@ -4,9 +4,9 @@ Model Context Protocol (MCP) server for [Keywords AI](https://keywordsai.co) - a
 
 ## Features
 
-- **Logs** - Query and filter LLM request logs with powerful filtering
+- **Logs** - Query, filter, and create LLM request logs
 - **Traces** - View complete execution traces with span trees
-- **Customers** - Access customer data and budget information  
+- **Customers** - Access customer data and budget information
 - **Prompts** - Manage prompt templates and versions
 
 ---
@@ -15,7 +15,7 @@ Model Context Protocol (MCP) server for [Keywords AI](https://keywordsai.co) - a
 
 ### Option 1: Public HTTP (Recommended)
 
-The fastest way to get started - no installation required.
+No installation required.
 
 1. Get your API key from [platform.keywordsai.co](https://platform.keywordsai.co/platform/api/api-keys)
 
@@ -49,39 +49,23 @@ The fastest way to get started - no installation required.
 }
 ```
 
-**Claude Desktop** (Windows: `%APPDATA%\Claude\claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "keywords-ai": {
-      "url": "https://mcp.keywordsai.co/api/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
-      }
-    }
-  }
-}
-```
-
 3. Restart Cursor/Claude Desktop
 
 ---
 
 ### Option 2: Local Stdio
 
-Run the MCP server locally - for personal development or offline use.
+Run the MCP server locally for personal development or offline use.
 
-**Prerequisites:** Node.js v18+, Git
+**Prerequisites:** Node.js v18+
 
 ```bash
-# 1. Clone and build
 git clone https://github.com/Keywords-AI/keywordsai-mcp.git
 cd keywordsai-mcp
 npm install
 npm run build
 ```
 
-**Cursor** (`~/.cursor/mcp.json`):
 ```json
 {
   "mcpServers": {
@@ -96,54 +80,15 @@ npm run build
 }
 ```
 
-**Claude Desktop** (macOS):
-```json
-{
-  "mcpServers": {
-    "keywords-ai": {
-      "command": "node",
-      "args": ["/Users/yourname/keywordsai-mcp/dist/lib/index.js"],
-      "env": {
-        "KEYWORDS_API_KEY": "YOUR_KEYWORDS_AI_API_KEY"
-      }
-    }
-  }
-}
-```
-
-**Claude Desktop** (Windows):
-```json
-{
-  "mcpServers": {
-    "keywords-ai": {
-      "command": "node",
-      "args": ["C:/Users/yourname/keywordsai-mcp/dist/lib/index.js"],
-      "env": {
-        "KEYWORDS_API_KEY": "YOUR_KEYWORDS_AI_API_KEY"
-      }
-    }
-  }
-}
-```
-
-> **Note:** Replace the path with your actual installation path. After updating code, run `npm run build` again.
-
 ---
 
 ### Option 3: Private HTTP (Teams)
 
-Deploy your own instance to Vercel - perfect for teams sharing a single deployment.
+Deploy your own instance to Vercel for teams sharing a single deployment.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Keywords-AI/keywordsai-mcp&env=KEYWORDS_API_KEY&envDescription=Your%20Keywords%20AI%20API%20key&envLink=https://platform.keywordsai.co/platform/api/api-keys)
 
-Or deploy manually:
-```bash
-git clone https://github.com/Keywords-AI/keywordsai-mcp.git
-cd keywordsai-mcp
-vercel deploy --prod
-```
-
-Then set `KEYWORDS_API_KEY` in Vercel Dashboard → Settings → Environment Variables.
+Set `KEYWORDS_API_KEY` in Vercel Dashboard > Settings > Environment Variables.
 
 Share this config with your team:
 ```json
@@ -158,55 +103,6 @@ Share this config with your team:
 
 ---
 
-## Enterprise Configuration
-
-For enterprise users with a custom API endpoint, override the default base URL:
-
-### HTTP Mode
-
-Add the `keywords-api-base-url` header:
-```json
-{
-  "mcpServers": {
-    "keywords-ai": {
-      "url": "https://mcp.keywordsai.co/api/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_API_KEY",
-        "keywords-api-base-url": "https://endpoint.keywordsai.co/api"
-      }
-    }
-  }
-}
-```
-
-### Stdio Mode
-
-Add the `KEYWORDS_API_BASE_URL` environment variable:
-```json
-{
-  "mcpServers": {
-    "keywords-ai": {
-      "command": "node",
-      "args": ["/path/to/keywordsai-mcp/dist/lib/index.js"],
-      "env": {
-        "KEYWORDS_API_KEY": "YOUR_API_KEY",
-        "KEYWORDS_API_BASE_URL": "https://endpoint.keywordsai.co/api"
-      }
-    }
-  }
-}
-```
-
-### Supported Endpoints
-
-| Endpoint | URL |
-|----------|-----|
-| Default (Cloud) | `https://api.keywordsai.co/api` |
-| Enterprise | `https://endpoint.keywordsai.co/api` |
-| Local development | `http://localhost:8000/api` |
-
----
-
 ## Available Tools
 
 ### Logs
@@ -215,18 +111,7 @@ Add the `KEYWORDS_API_BASE_URL` environment variable:
 |------|-------------|
 | `list_logs` | List and filter LLM request logs with powerful query capabilities |
 | `get_log_detail` | Retrieve complete details of a single log by unique ID |
-
-**Filter Examples:**
-```json
-{
-  "cost": {"operator": "gt", "value": [0.01]},
-  "model": {"operator": "", "value": ["gpt-4"]},
-  "customer_identifier": {"operator": "contains", "value": ["user"]},
-  "metadata__session_id": {"operator": "", "value": ["abc123"]}
-}
-```
-
-**Filter Operators:** `""` (equal), `not`, `lt`, `lte`, `gt`, `gte`, `contains`, `icontains`, `startswith`, `endswith`, `in`, `isnull`
+| `create_log` | Create a new log entry for any type of LLM request |
 
 ### Traces
 
@@ -253,80 +138,90 @@ Add the `KEYWORDS_API_BASE_URL` environment variable:
 
 ---
 
+## Filter Syntax
+
+Tools that support filtering accept a `filters` object:
+
+```json
+{
+  "cost": {"operator": "gt", "value": [0.01]},
+  "model": {"operator": "", "value": ["gpt-4"]},
+  "customer_identifier": {"operator": "contains", "value": ["user"]},
+  "metadata__session_id": {"operator": "", "value": ["abc123"]}
+}
+```
+
+**Operators:** `""` (equal), `not`, `lt`, `lte`, `gt`, `gte`, `contains`, `icontains`, `startswith`, `endswith`, `in`, `isnull`
+
+---
+
 ## Project Structure
 
 ```
 keywordsai-mcp/
 ├── api/
-│   └── mcp.ts              # HTTP entry point (Vercel deployment)
+│   └── mcp.ts                # HTTP entry point (Vercel serverless function)
 ├── lib/
-│   ├── index.ts            # Stdio entry point (local development)
+│   ├── index.ts              # Stdio entry point (local mode)
+│   ├── shared/
+│   │   └── client.ts         # API client, auth config, path validation
 │   ├── observe/
-│   │   ├── logs.ts         # Log tools
-│   │   ├── traces.ts       # Trace tools
-│   │   └── users.ts        # Customer tools
-│   ├── develop/
-│   │   └── prompts.ts      # Prompt tools
-│   └── shared/
-│       └── client.ts       # API client utilities
-├── public/
-│   └── index.html          # Landing page (redirects to docs)
-├── vercel.json             # Vercel configuration
-├── tsconfig.json           # TypeScript configuration
+│   │   ├── logs.ts           # list_logs, get_log_detail, create_log
+│   │   ├── traces.ts         # list_traces, get_trace_tree
+│   │   └── users.ts          # list_customers, get_customer_detail
+│   └── develop/
+│       └── prompts.ts        # list_prompts, get_prompt_detail, versions
+├── vercel.json               # Vercel config (rewrites, function timeout)
+├── tsconfig.json             # TypeScript config
 └── package.json
 ```
+
+### Architecture
+
+- **Two entry points:** `api/mcp.ts` (HTTP via Vercel) and `lib/index.ts` (stdio for local use)
+- **Shared core:** Both entry points create an `AuthConfig` and pass it to the same tool registration functions via closures - no global mutable state
+- **Tool modules:** Organized by domain (`observe/` for runtime data, `develop/` for prompt management)
+- **API client:** `lib/shared/client.ts` handles all upstream API calls with 30s timeout, path validation, and auth
+
+---
+
+## Enterprise Configuration
+
+For custom API endpoints, set the `KEYWORDS_API_BASE_URL` environment variable:
+
+**Stdio mode:**
+```json
+{
+  "mcpServers": {
+    "keywords-ai": {
+      "command": "node",
+      "args": ["/path/to/keywordsai-mcp/dist/lib/index.js"],
+      "env": {
+        "KEYWORDS_API_KEY": "YOUR_API_KEY",
+        "KEYWORDS_API_BASE_URL": "https://your-endpoint.example.com/api"
+      }
+    }
+  }
+}
+```
+
+**Private deployment:** Set `KEYWORDS_API_BASE_URL` in Vercel environment variables.
 
 ---
 
 ## Local Development
 
 ```bash
-# Build the project
-npm run build
-
-# Run in stdio mode (for testing with MCP clients)
-npm run stdio
-
-# Run Vercel dev server (for HTTP testing)
-npx vercel dev
+npm run build        # Compile TypeScript
+npm run watch        # Watch mode
+npm run stdio        # Build and run in stdio mode
 ```
-
-### Testing with MCP Inspector
-
-```bash
-npx @modelcontextprotocol/inspector
-```
-
-Then connect to `http://localhost:3000/mcp` with your Authorization header.
-
----
-
-## Troubleshooting
-
-### MCP server not showing up
-
-1. Verify your config file path is correct
-2. Check JSON syntax (trailing commas, missing quotes)
-3. Restart your AI tool completely
-4. For stdio: ensure the path to `index.js` is absolute and correct
-
-### Authentication errors
-
-1. Verify your API key at [platform.keywordsai.co](https://platform.keywordsai.co/platform/api/api-keys)
-2. HTTP mode: ensure format is `Authorization: Bearer YOUR_KEY`
-3. Stdio mode: check `KEYWORDS_API_KEY` is set in the `env` section
-
-### Connection issues
-
-1. Check internet connection
-2. For enterprise: verify `KEYWORDS_API_BASE_URL` is correct
-3. For private deployment: check Vercel logs for errors
 
 ---
 
 ## Documentation
 
-Full documentation available at [docs.keywordsai.co/documentation/resources/mcp](https://docs.keywordsai.co/documentation/resources/mcp)
+Full documentation at [docs.keywordsai.co/documentation/resources/mcp](https://docs.keywordsai.co/documentation/resources/mcp)
 
 ## License
 
