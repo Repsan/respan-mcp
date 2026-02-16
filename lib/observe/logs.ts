@@ -7,7 +7,7 @@ export function registerLogTools(server: McpServer, auth: AuthConfig) {
   // --- List Logs ---
   server.tool(
     "list_logs",
-    `List and filter LLM request logs with powerful query capabilities.
+    `List and filter LLM request logs via GET /api/request-logs/.
 
 QUERY PARAMETERS:
 - page_size: Number of logs per page (max 50 for MCP, API supports up to 1000)
@@ -19,8 +19,9 @@ QUERY PARAMETERS:
 - is_test: "true" or "false" - filter by environment
 - all_envs: "true" or "false" - include all environments
 
-FILTERS (in request body):
+FILTERS (passed as URL query parameters):
 Pass filters as an object where each key is a field name and value contains operator and value array.
+These are converted to URL query parameters internally (e.g. ?cost[value]=0.01&cost[operator]=gt).
 
 Filter Operators:
 - "" (empty): Equal/exact match
@@ -40,6 +41,8 @@ Filterable Fields:
 - Metrics: cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens
 - Config: environment, log_type, stream, temperature, max_tokens
 - Custom metadata: Use "metadata__your_field" prefix
+
+Note: POST /api/request-logs/ is for creating logs, not listing. This tool uses GET.
 
 EXAMPLE FILTERS:
 {
@@ -70,11 +73,42 @@ EXAMPLE FILTERS:
       if (is_test !== undefined) queryParams.is_test = is_test.toString();
       if (all_envs !== undefined) queryParams.all_envs = all_envs.toString();
 
-      const data = await keywordsRequest("request-logs/list/", auth, {
-        method: "POST",
+      // Convert filters to URL query params for GET request
+      if (filters) {
+        for (const [field, filter] of Object.entries(filters)) {
+          if (filter.operator === "" || !filter.operator) {
+            queryParams[field] = filter.value[0];
+          } else {
+            queryParams[`${field}[value]`] = filter.value[0];
+            queryParams[`${field}[operator]`] = filter.operator;
+          }
+        }
+      }
+
+      const data = await keywordsRequest("request-logs/", auth, {
+        method: "GET",
         queryParams,
-        body: { filters: filters || {} }
       });
+
+      // GET /api/request-logs/ returns a flat array; normalize to paginated format
+      if (Array.isArray(data)) {
+        const offset = (page - 1) * limit;
+        const paginatedResults = data.slice(offset, offset + limit);
+        const totalCount = data.length;
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              results: paginatedResults,
+              count: totalCount,
+              previous: page > 1 ? `page=${page - 1}` : null,
+              next: offset + limit < totalCount ? `page=${page + 1}` : null,
+              current_filters: {}
+            }, null, 2)
+          }]
+        };
+      }
+
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -82,7 +116,7 @@ EXAMPLE FILTERS:
   // --- Get Single Log ---
   server.tool(
     "get_log_detail",
-    `Retrieve complete details of a single log by its unique ID.
+    `Retrieve complete details of a single log via GET /api/request-logs/{id}/.
 
 Returns full information including:
 - Full input/output content (input and output fields)
