@@ -1,9 +1,9 @@
 // lib/observe/users.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { keywordsRequest } from "../shared/client.js";
+import { AuthConfig, keywordsRequest, validatePathParam } from "../shared/client.js";
 
-export function registerUserTools(server: McpServer) {
+export function registerUserTools(server: McpServer, auth: AuthConfig) {
   // --- List Customers ---
   server.tool(
     "list_customers",
@@ -14,10 +14,7 @@ Retrieves a paginated list of customers who have made API requests through Keywo
 QUERY PARAMETERS:
 - page_size: Number of customers per page (max 50 for MCP, API supports up to 1000)
 - page: Page number (default 1)
-- sort_by: Sort field with optional - prefix for descending. IMPORTANT: Do NOT wrap the value in quotes, pass the raw value directly.
-  Options: customer_identifier, email, first_seen, last_active_timeframe,
-           number_of_requests, total_cost, total_tokens, active_days,
-           average_latency, average_ttft
+- sort_by: Sort field. Prefix with - for descending order.
   Examples: -total_cost (highest spending first), -number_of_requests (most active first)
 - environment: Filter by environment ("prod" or "test")
 
@@ -40,22 +37,18 @@ Use this to identify top users by cost, most active users, or find specific cust
     {
       page_size: z.number().optional().describe("Customers per page (1-50, default 20)"),
       page: z.number().optional().describe("Page number (default 1)"),
-      sort_by: z.string().optional().describe("Sort field. IMPORTANT: pass raw value without quotes. Valid values: customer_identifier, -total_cost, -number_of_requests, email, -first_seen, -last_active_timeframe, -active_days, -total_tokens. Prefix - for descending."),
+      sort_by: z.enum(["customer_identifier", "-customer_identifier", "email", "-email", "first_seen", "-first_seen", "last_active_timeframe", "-last_active_timeframe", "number_of_requests", "-number_of_requests", "total_cost", "-total_cost", "total_tokens", "-total_tokens", "active_days", "-active_days", "average_latency", "-average_latency", "average_ttft", "-average_ttft"]).optional().describe("Sort field. Prefix with - for descending order."),
       environment: z.string().optional().describe("Filter by environment: 'prod' or 'test'")
     },
-    async ({ page_size = 20, page = 1, sort_by = "-first_seen", environment }, extra) => {
-      // Strip surrounding quotes that LLMs sometimes add (e.g. '"-first_seen"' -> '-first_seen')
-      const cleanSortBy = sort_by.replace(/^["']|["']$/g, "");
-
+    async ({ page_size = 20, page = 1, sort_by = "-first_seen", environment }) => {
       const queryParams: Record<string, any> = {
         page_size: Math.min(page_size, 50),
         page,
-        sort_by: cleanSortBy
+        sort_by
       };
-      
       if (environment) queryParams.environment = environment;
-      
-      const data = await keywordsRequest("users/list/", extra, { queryParams });
+
+      const data = await keywordsRequest("users/list/", auth, { queryParams });
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -110,11 +103,12 @@ Use list_customers first to find customer_identifier, then use this for full det
       customer_identifier: z.string().describe("Unique identifier of the customer (from list_customers)"),
       environment: z.string().optional().describe("Environment: 'prod' or 'test' (default: 'prod')")
     },
-    async ({ customer_identifier, environment }, extra) => {
+    async ({ customer_identifier, environment }) => {
+      const safeId = validatePathParam(customer_identifier, "customer_identifier");
       const queryParams: Record<string, any> = {};
       if (environment) queryParams.environment = environment;
-      
-      const data = await keywordsRequest(`users/${customer_identifier}/`, extra, { queryParams });
+
+      const data = await keywordsRequest(`users/${safeId}/`, auth, { queryParams });
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );

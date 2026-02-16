@@ -1,10 +1,10 @@
 // lib/develop/prompts.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { keywordsRequest } from "../shared/client.js";
+import { AuthConfig, keywordsRequest, validatePathParam } from "../shared/client.js";
 
-export function registerPromptTools(server: McpServer) {
-  
+export function registerPromptTools(server: McpServer, auth: AuthConfig) {
+
   // 1. List all Prompts
   server.tool(
     "list_prompts",
@@ -23,16 +23,15 @@ RESPONSE FIELDS (per prompt):
 - current_version: Currently active version number
 - tags: Array of tags for organization
 
-Prompts are reusable templates that can have multiple versions. 
+Prompts are reusable templates that can have multiple versions.
 Use get_prompt_detail to see full prompt content, or list_prompt_versions to see all versions.`,
     {
-      page_size: z.number().optional().describe("Number of prompts per page (default 100)")
+      page_size: z.number().optional().describe("Number of prompts per page (1-50, default 50)")
     },
-    async ({ page_size = 100 }, extra) => {
-      const data = await keywordsRequest("prompts/", extra, { queryParams: { page_size } });
-      return {
-        content: [{ type: "text", text: JSON.stringify(data, null, 2) }]
-      };
+    async ({ page_size = 50 }) => {
+      const limit = Math.min(page_size, 50);
+      const data = await keywordsRequest("prompts/", auth, { queryParams: { page_size: limit } });
+      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
 
@@ -66,11 +65,10 @@ Use list_prompts first to find the prompt_id.`,
     {
       prompt_id: z.string().describe("Unique prompt identifier (from list_prompts)")
     },
-    async ({ prompt_id }, extra) => {
-      const data = await keywordsRequest(`prompts/${prompt_id}/`, extra);
-      return {
-        content: [{ type: "text", text: JSON.stringify(data, null, 2) }]
-      };
+    async ({ prompt_id }) => {
+      const safeId = validatePathParam(prompt_id, "prompt_id");
+      const data = await keywordsRequest(`prompts/${safeId}/`, auth);
+      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
 
@@ -101,11 +99,10 @@ Use list_prompts first to find the prompt_id.`,
     {
       prompt_id: z.string().describe("Unique prompt identifier (from list_prompts)")
     },
-    async ({ prompt_id }, extra) => {
-      const data = await keywordsRequest(`prompts/${prompt_id}/versions/`, extra);
-      return {
-        content: [{ type: "text", text: JSON.stringify(data, null, 2) }]
-      };
+    async ({ prompt_id }) => {
+      const safeId = validatePathParam(prompt_id, "prompt_id");
+      const data = await keywordsRequest(`prompts/${safeId}/versions/`, auth);
+      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
 
@@ -140,11 +137,11 @@ Use list_prompts to find prompt_id, then list_prompt_versions to find version_id
       prompt_id: z.string().describe("Unique prompt identifier (from list_prompts)"),
       version_id: z.string().describe("Version identifier (from list_prompt_versions)")
     },
-    async ({ prompt_id, version_id }, extra) => {
-      const data = await keywordsRequest(`prompts/${prompt_id}/versions/${version_id}/`, extra);
-      return {
-        content: [{ type: "text", text: JSON.stringify(data, null, 2) }]
-      };
+    async ({ prompt_id, version_id }) => {
+      const safePromptId = validatePathParam(prompt_id, "prompt_id");
+      const safeVersionId = validatePathParam(version_id, "version_id");
+      const data = await keywordsRequest(`prompts/${safePromptId}/versions/${safeVersionId}/`, auth);
+      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
 }

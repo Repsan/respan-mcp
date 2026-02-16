@@ -1,7 +1,7 @@
 {
   "name": "keywords-mcp",
   "version": "1.0.0",
-  "description": "Keywords AI 的 MCP 服务器 - 支持 HTTP 流式传输和本地 stdio 模式",
+  "description": "Keywords AI MCP Server - HTTP streaming and local stdio modes",
   "main": "dist/lib/index.js",
   "type": "module",
   "bin": {
@@ -14,38 +14,8 @@
     "start": "node dist/lib/index.js",
     "clean": "rm -rf dist"
   },
-  "usage": {
-    "mode1_http_streaming": {
-      "description": "HTTP Streamable 模式 - 通过 Authorization Header 传递 API Key",
-      "deploy": "vercel deploy --prod",
-      "url": "https://mcp.keywordsai.co/api/mcp",
-      "auth": "Authorization: Bearer YOUR_KEYWORDS_AI_API_KEY",
-      "cursor_config": {
-        "mcpServers": {
-          "keywords-ai": {
-            "url": "https://mcp.keywordsai.co/api/mcp",
-            "headers": {
-              "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
-            }
-          }
-        }
-      }
-    },
-    "mode2_private_deployment": {
-      "description": "私有部署 - API Key 存在 Vercel 环境变量中（无需客户端传递）",
-      "deploy": "vercel deploy --prod",
-      "env": "KEYWORDS_API_KEY (在 Vercel Dashboard 设置)",
-      "url": "https://customer-project.vercel.app/mcp"
-    },
-    "mode3_local_stdio": {
-      "description": "本地 stdio 模式 - 在 Cursor/Claude Desktop 本地运行",
-      "command": "node {项目绝对路径}/dist/lib/index.js",
-      "config": "先运行 npm run build，并在环境变量中设置 KEYWORDS_API_KEY"
-    }
-  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
-    "mcp-handler": "^1.0.4",
     "zod": "^4.3.4"
   },
   "devDependencies": {

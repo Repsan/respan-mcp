@@ -1,31 +1,29 @@
 #!/usr/bin/env node
-// Main entry point for Keywords AI MCP Server
+// Entry point for Keywords AI MCP Server (stdio mode)
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { resolveAuthFromEnv } from "./shared/client.js";
 import { registerLogTools } from "./observe/logs.js";
 import { registerTraceTools } from "./observe/traces.js";
 import { registerUserTools } from "./observe/users.js";
 import { registerPromptTools } from "./develop/prompts.js";
 
 async function main() {
-  // Create the MCP server
+  const auth = resolveAuthFromEnv();
+
   const server = new McpServer({
     name: "keywords-ai",
     version: "1.0.0",
   });
 
-  // Register all tool categories
-  registerLogTools(server);
-  registerTraceTools(server);
-  registerUserTools(server);
-  registerPromptTools(server);
+  registerLogTools(server, auth);
+  registerTraceTools(server, auth);
+  registerUserTools(server, auth);
+  registerPromptTools(server, auth);
 
-  // Use stdio transport for standard MCP communication
   const transport = new StdioServerTransport();
-  
-  // Connect and start the server
   await server.connect(transport);
-  
+
   console.error("Keywords AI MCP Server running on stdio");
 }
 

@@ -1,87 +1,66 @@
 // lib/shared/client.ts
-import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 
-// Store API key and base URL from HTTP headers for the current request
-let requestApiKey: string | null = null;
-let requestBaseUrl: string | null = null;
+const DEFAULT_BASE_URL = "https://api.repsan.ai/api";
+const REQUEST_TIMEOUT_MS = 30_000;
 
-export function setRequestApiKey(apiKey: string | null) {
-  requestApiKey = apiKey;
-}
-
-export function setRequestBaseUrl(baseUrl: string | null) {
-  requestBaseUrl = baseUrl;
+export interface AuthConfig {
+  apiKey: string;
+  baseUrl: string;
 }
 
 /**
- * Get API Key from multiple sources
- * Priority: Query parameter (HTTP mode) > KEYWORDS_API_KEY environment variable (stdio mode)
+ * Validate that a path parameter is safe (alphanumeric, hyphens, underscores, dots, @).
+ * Prevents path traversal attacks via user-supplied IDs.
  */
-function getApiKey(extra: RequestHandlerExtra<ServerRequest, ServerNotification>): string {
-  // 1. Try to get from query parameter (set by api/mcp.ts in HTTP mode)
-  if (requestApiKey) {
-    return requestApiKey;
+export function validatePathParam(value: string, name: string): string {
+  if (!/^[\w.@-]+$/.test(value)) {
+    throw new Error(`Invalid ${name}: contains disallowed characters`);
   }
-
-  // 2. Get from environment variable (used in stdio mode or as fallback)
-  const envApiKey = process.env.KEYWORDS_API_KEY;
-  if (envApiKey) {
-    return envApiKey;
-  }
-
-  throw new Error(
-    "Missing Keywords AI API key. Please provide it via:\n" +
-    "- HTTP mode: URL query parameter (?apikey=YOUR_KEY)\n" +
-    "- Stdio mode: KEYWORDS_API_KEY environment variable"
-  );
+  return value;
 }
 
 /**
- * Get base URL for Keywords AI API
- * Priority: X-Keywords-Base-URL header (HTTP mode) > KEYWORDS_API_BASE_URL env var > default
- * Default: https://api.keywordsai.co/api
- * Examples:
- *   - Enterprise: https://endpoint.keywordsai.co/api
- *   - Local dev:  http://localhost:8000/api
+ * Resolve auth config from environment variables (used in stdio mode).
  */
-function getBaseUrl(): string {
-  // 1. From HTTP header (set by api/mcp.ts)
-  if (requestBaseUrl) {
-    return requestBaseUrl;
+export function resolveAuthFromEnv(): AuthConfig {
+  const apiKey = process.env.KEYWORDS_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "Missing API key. Set the KEYWORDS_API_KEY environment variable."
+    );
   }
-  // 2. From environment variable (stdio mode or server default)
-  return process.env.KEYWORDS_API_BASE_URL || "https://api.keywordsai.co/api";
+  return {
+    apiKey,
+    baseUrl: process.env.KEYWORDS_API_BASE_URL || DEFAULT_BASE_URL,
+  };
 }
 
 export async function keywordsRequest(
-  endpoint: string, 
-  extra: RequestHandlerExtra<ServerRequest, ServerNotification>, 
+  endpoint: string,
+  auth: AuthConfig,
   options: {
     method?: "GET" | "POST";
     queryParams?: Record<string, any>;
     body?: any;
   } = {}
 ) {
-  const apiKey = getApiKey(extra);
-  const baseUrl = getBaseUrl();
   const { method = "GET", queryParams = {}, body } = options;
-  
-  // Filter out undefined values
+
   const filteredParams = Object.fromEntries(
     Object.entries(queryParams).filter(([_, v]) => v !== undefined)
   );
-  
+
   const queryString = new URLSearchParams(filteredParams).toString();
-  const url = `${baseUrl}/${endpoint}${queryString ? `?${queryString}` : ""}`;
+  const url = `${auth.baseUrl}/${endpoint}${queryString ? `?${queryString}` : ""}`;
 
   const response = await fetch(url, {
     method,
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      "Authorization": `Bearer ${auth.apiKey}`,
       "Content-Type": "application/json",
     },
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {

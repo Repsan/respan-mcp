@@ -1,9 +1,9 @@
 // lib/observe/traces.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { keywordsRequest } from "../shared/client.js";
+import { AuthConfig, keywordsRequest, validatePathParam } from "../shared/client.js";
 
-export function registerTraceTools(server: McpServer) {
+export function registerTraceTools(server: McpServer, auth: AuthConfig) {
   // --- List Traces ---
   server.tool(
     "list_traces",
@@ -14,9 +14,7 @@ A trace represents a complete workflow execution containing multiple spans (indi
 QUERY PARAMETERS:
 - page_size: Results per page (max 20 for MCP, API supports up to 1000)
 - page: Page number (default 1)
-- sort_by: Sort field with optional - prefix for descending. IMPORTANT: Do NOT wrap the value in quotes, pass the raw value directly.
-  Options: timestamp, start_time, end_time, duration, total_cost, total_tokens,
-           total_prompt_tokens, total_completion_tokens, span_count, llm_call_count, error_count
+- sort_by: Sort field. Prefix with - for descending order.
   Example: -total_cost (highest cost first)
 - start_time: ISO 8601 datetime (default: 1 hour ago)
 - end_time: ISO 8601 datetime (default: current time)
@@ -75,8 +73,8 @@ RESPONSE FIELDS:
     {
       page_size: z.number().optional().describe("Results per page (1-20, default 10)"),
       page: z.number().optional().describe("Page number (default 1)"),
-      sort_by: z.string().optional().describe("Sort field. IMPORTANT: pass raw value without quotes. Valid values: timestamp, -timestamp, duration, -duration, total_cost, -total_cost, error_count, -error_count. Prefix - for descending."),
-      start_time: z.string().optional().describe("Start time in ISO 8601 format (e.g., '2024-01-15T00:00:00Z'). Default: 1 hour ago"),
+      sort_by: z.enum(["timestamp", "-timestamp", "start_time", "-start_time", "end_time", "-end_time", "duration", "-duration", "total_cost", "-total_cost", "total_tokens", "-total_tokens", "total_prompt_tokens", "-total_prompt_tokens", "total_completion_tokens", "-total_completion_tokens", "span_count", "-span_count", "llm_call_count", "-llm_call_count", "error_count", "-error_count"]).optional().describe("Sort field. Prefix with - for descending order."),
+      start_time: z.string().optional().describe("Start time in ISO 8601 format. Default: 1 hour ago"),
       end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
       environment: z.string().optional().describe("Filter by environment (e.g., 'production', 'test')"),
       filters: z.record(z.string(), z.object({
@@ -84,23 +82,15 @@ RESPONSE FIELDS:
         value: z.array(z.any()).describe("Filter value(s) as array")
       })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array.")
     },
-    async ({ page_size = 10, page = 1, sort_by = "-timestamp", start_time, end_time, environment, filters }, extra) => {
+    async ({ page_size = 10, page = 1, sort_by = "-timestamp", start_time, end_time, environment, filters }) => {
       const limit = Math.min(page_size, 20);
 
-      // Strip surrounding quotes that LLMs sometimes add (e.g. '"-timestamp"' -> '-timestamp')
-      const cleanSortBy = sort_by.replace(/^["']|["']$/g, "");
-
-      const queryParams: Record<string, any> = {
-        page_size: limit,
-        page,
-        sort_by: cleanSortBy
-      };
-      
+      const queryParams: Record<string, any> = { page_size: limit, page, sort_by };
       if (start_time) queryParams.start_time = start_time;
       if (end_time) queryParams.end_time = end_time;
       if (environment) queryParams.environment = environment;
-      
-      const data = await keywordsRequest("traces/list/", extra, {
+
+      const data = await keywordsRequest("traces/list/", auth, {
         method: "POST",
         queryParams,
         body: { filters: filters || {} }
@@ -158,13 +148,14 @@ Use list_traces first to find trace_unique_id, then use this for full span tree.
       start_time: z.string().optional().describe("Start time filter in ISO 8601 format"),
       end_time: z.string().optional().describe("End time filter in ISO 8601 format")
     },
-    async ({ trace_id, environment, start_time, end_time }, extra) => {
+    async ({ trace_id, environment, start_time, end_time }) => {
+      const safeId = validatePathParam(trace_id, "trace_id");
       const queryParams: Record<string, any> = {};
       if (environment) queryParams.environment = environment;
       if (start_time) queryParams.start_time = start_time;
       if (end_time) queryParams.end_time = end_time;
-      
-      const data = await keywordsRequest(`traces/${trace_id}/`, extra, { queryParams });
+
+      const data = await keywordsRequest(`traces/${safeId}/`, auth, { queryParams });
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
