@@ -5,7 +5,7 @@
   ],
   "functions": {
     "api/mcp.ts": {
-      "maxDuration": 60
+      "maxDuration": 800
     }
   }
 }
