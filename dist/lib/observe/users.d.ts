@@ -1,2 +1,3 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-export declare function registerUserTools(server: McpServer): void;
+import { AuthConfig } from "../shared/client.js";
+export declare function registerUserTools(server: McpServer, auth: AuthConfig): void;

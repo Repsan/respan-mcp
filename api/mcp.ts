@@ -7,7 +7,7 @@ import { registerTraceTools } from '../lib/observe/traces.js';
 import { registerUserTools } from '../lib/observe/users.js';
 import type { AuthConfig } from '../lib/shared/client.js';
 
-const DEFAULT_BASE_URL = 'https://api.repsan.ai/api';
+const DEFAULT_BASE_URL = 'https://api.keywordsai.co/api';
 
 function createServer(auth: AuthConfig): McpServer {
   const server = new McpServer({
