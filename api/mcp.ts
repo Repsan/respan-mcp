@@ -67,9 +67,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    const baseUrl = (req.headers['keywords-api-base-url'] as string)
+      || process.env.KEYWORDS_API_BASE_URL
+      || DEFAULT_BASE_URL;
+
     const auth: AuthConfig = {
       apiKey,
-      baseUrl: process.env.KEYWORDS_API_BASE_URL || DEFAULT_BASE_URL,
+      baseUrl,
     };
 
     const server = createServer(auth);
