@@ -7,7 +7,7 @@ export function registerLogTools(server: McpServer, auth: AuthConfig) {
   // --- List Logs ---
   server.tool(
     "list_logs",
-    `List and filter LLM request logs via GET /api/request-logs/.
+    `List and filter LLM request logs via POST /api/request-logs/list/.
 
 QUERY PARAMETERS:
 - page_size: Number of logs per page (max 50 for MCP, API supports up to 1000)
@@ -19,9 +19,9 @@ QUERY PARAMETERS:
 - is_test: "true" or "false" - filter by environment
 - all_envs: "true" or "false" - include all environments
 
-FILTERS (passed as URL query parameters):
+FILTERS (passed in POST body):
 Pass filters as an object where each key is a field name and value contains operator and value array.
-These are converted to URL query parameters internally (e.g. ?cost[value]=0.01&cost[operator]=gt).
+Filters are sent in the request body as { filters: { ... } }.
 
 Filter Operators:
 - "" (empty): Equal/exact match
@@ -41,8 +41,6 @@ Filterable Fields:
 - Metrics: cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens
 - Config: environment, log_type, stream, temperature, max_tokens
 - Custom metadata: Use "metadata__your_field" prefix
-
-Note: POST /api/request-logs/ is for creating logs, not listing. This tool uses GET.
 
 EXAMPLE FILTERS:
 {
@@ -67,47 +65,37 @@ EXAMPLE FILTERS:
     async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters }) => {
       const limit = Math.min(page_size, 50);
 
-      const queryParams: Record<string, any> = { page_size: limit, page, sort_by };
+      const queryParams: Record<string, any> = {
+        page_size: limit,
+        page,
+        sort_by,
+        fetch_filters: "false",
+      };
       if (start_time) queryParams.start_time = start_time;
       if (end_time) queryParams.end_time = end_time;
       if (is_test !== undefined) queryParams.is_test = is_test.toString();
       if (all_envs !== undefined) queryParams.all_envs = all_envs.toString();
 
-      // Convert filters to URL query params for GET request
+      // Convert filters to the backend body format: { field: { value: [...], operator: "...", connector: "AND" } }
+      const bodyFilters: Record<string, any> = {};
       if (filters) {
         for (const [field, filter] of Object.entries(filters)) {
-          if (filter.operator === "" || !filter.operator) {
-            queryParams[field] = filter.value[0];
-          } else {
-            queryParams[`${field}[value]`] = filter.value[0];
-            queryParams[`${field}[operator]`] = filter.operator;
-          }
+          bodyFilters[field] = {
+            value: filter.value,
+            operator: filter.operator || "",
+            connector: "AND",
+          };
         }
       }
 
-      const data = await keywordsRequest("request-logs/", auth, {
-        method: "GET",
+      const data = await keywordsRequest("request-logs/list/", auth, {
+        method: "POST",
         queryParams,
+        body: {
+          filters: bodyFilters,
+          exporting: false,
+        },
       });
-
-      // GET /api/request-logs/ returns a flat array; normalize to paginated format
-      if (Array.isArray(data)) {
-        const offset = (page - 1) * limit;
-        const paginatedResults = data.slice(offset, offset + limit);
-        const totalCount = data.length;
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              results: paginatedResults,
-              count: totalCount,
-              previous: page > 1 ? `page=${page - 1}` : null,
-              next: offset + limit < totalCount ? `page=${page + 1}` : null,
-              current_filters: {}
-            }, null, 2)
-          }]
-        };
-      }
 
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
