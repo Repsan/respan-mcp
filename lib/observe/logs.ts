@@ -7,7 +7,9 @@ export function registerLogTools(server: McpServer, auth: AuthConfig) {
   // --- List Logs ---
   server.tool(
     "list_logs",
-    `List and filter LLM request logs. Supports pagination, sorting, time range, and powerful server-side filtering via the "filters" parameter.
+    `List and filter LLM request logs. Supports pagination, sorting, time range, and server-side filtering.
+
+IMPORTANT: Use the "filters" parameter to filter results server-side. Do NOT fetch all logs and filter client-side.
 
 PARAMETERS:
 - page_size: Number of logs per page (1-50, default 20)
@@ -17,33 +19,28 @@ PARAMETERS:
 - is_test: Filter by test (true) or production (false) environment
 - all_envs: Include all environments
 - include_fields: Array of field names to return (defaults to summary fields). Use get_log_detail for full data.
-- filters: Server-side filters object (see below)
+- filters: Array of server-side filter objects. Each filter has: field (string), operator (string), value (array). See below.
 
-FILTERS PARAMETER:
-Pass the "filters" parameter to filter logs server-side by any field. It is an object where each key is a filterable field name and the value is {"operator": "<op>", "value": [<values>]}.
+FILTERS - supported operators:
+"" (exact match), "not", "lt", "lte", "gt", "gte", "icontains", "startswith", "endswith", "in", "isnull"
 
-Operators: "" (exact match), "not", "lt", "lte", "gt", "gte", "icontains", "startswith", "endswith", "in", "isnull"
+FILTERS - supported fields:
+customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id, organization_id, organization_key_id, organization_key_name, customer_email, customer_name, trace_unique_id, span_name, span_workflow_name, model, deployment_name, provider_id, prompt_name, status_code, status, error_message, failed, cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens, total_request_tokens, environment, log_type, stream, temperature, max_tokens, metadata__<key>, scores__<evaluator_id>
 
-Filterable fields:
-- Identifiers: customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id, organization_id, organization_key_id, organization_key_name, customer_email, customer_name
-- Tracing: trace_unique_id, span_name, span_workflow_name
-- Model/Provider: model, deployment_name, provider_id, prompt_name
-- Status: status_code, status, error_message, failed
-- Metrics: cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens, total_request_tokens
-- Config: environment, log_type, stream, temperature, max_tokens
-- Custom metadata: Use "metadata__<key>" (e.g. "metadata__session_id")
-- Evaluation scores: Use "scores__<evaluator_id>"
-
-EXAMPLE - calling this tool with filters:
+EXAMPLE - find all error logs (status_code != 200):
 {
-  "page_size": 10,
-  "sort_by": "-cost",
-  "filters": {
-    "model": {"operator": "", "value": ["gpt-4"]},
-    "customer_identifier": {"operator": "icontains", "value": ["user"]},
-    "cost": {"operator": "gt", "value": [0.01]},
-    "metadata__session_id": {"operator": "", "value": ["abc123"]}
-  }
+  "filters": [{"field": "status_code", "operator": "not", "value": [200]}],
+  "sort_by": "-id",
+  "page_size": 20
+}
+
+EXAMPLE - find logs for a specific model and customer:
+{
+  "filters": [
+    {"field": "model", "operator": "", "value": ["gpt-4"]},
+    {"field": "customer_identifier", "operator": "icontains", "value": ["user"]},
+    {"field": "cost", "operator": "gt", "value": [0.01]}
+  ]
 }`,
     {
       page_size: z.number().optional().describe("Number of logs per page (1-50, default 20)"),
@@ -53,10 +50,11 @@ EXAMPLE - calling this tool with filters:
       end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
       is_test: z.boolean().optional().describe("Filter by test environment (true) or production (false)"),
       all_envs: z.boolean().optional().describe("Include logs from all environments"),
-      filters: z.record(z.string(), z.object({
-        operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'iexact', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
-        value: z.array(z.any()).describe("Filter value(s) as array")
-      })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array."),
+      filters: z.array(z.object({
+        field: z.string().describe("Field to filter on. Supported: customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id, trace_unique_id, span_name, span_workflow_name, model, deployment_name, provider_id, prompt_name, status_code, status, error_message, failed, cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens, total_request_tokens, environment, log_type, stream, temperature, max_tokens. For custom metadata use metadata__<key>. For scores use scores__<evaluator_id>."),
+        operator: z.enum(["", "not", "lt", "lte", "gt", "gte", "icontains", "iexact", "contains", "startswith", "endswith", "in", "isnull"]).describe("Filter operator. '' = exact match, 'not' = not equal, 'lt'/'lte' = less than, 'gt'/'gte' = greater than, 'icontains' = case-insensitive contains, 'in' = value in list, 'isnull' = check null"),
+        value: z.array(z.any()).describe("Filter value(s) as array, e.g. [200], ['gpt-4'], [true]")
+      })).optional().describe("Array of server-side filters. Each filter has field, operator, and value. Example: [{\"field\": \"status_code\", \"operator\": \"not\", \"value\": [200]}]"),
       include_fields: z.array(z.string()).optional().describe("Fields to include in response. Defaults to summary fields (unique_id, model, cost, status_code, latency, timestamp, customer_identifier, prompt_tokens, completion_tokens, status, error_message, log_type). Use get_log_detail for full log data.")
     },
     async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters, include_fields }) => {
@@ -85,13 +83,13 @@ EXAMPLE - calling this tool with filters:
       ];
       queryParams.include_fields = (include_fields || DEFAULT_FIELDS).join(",");
 
-      // Convert filters to the backend body format: { field: { operator, value } }
+      // Convert filters array to the backend body format: { field: { operator, value } }
       const bodyFilters: Record<string, any> = {};
       if (filters) {
-        for (const [field, filter] of Object.entries(filters)) {
-          bodyFilters[field] = {
-            value: filter.value,
-            operator: filter.operator || "",
+        for (const f of filters) {
+          bodyFilters[f.field] = {
+            value: f.value,
+            operator: f.operator || "",
           };
         }
       }
