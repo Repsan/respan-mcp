@@ -1,7 +1,7 @@
 // lib/shared/client.ts
 
 const DEFAULT_BASE_URL = "https://api.keywordsai.co/api";
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 180_000;
 
 export interface AuthConfig {
   apiKey: string;
