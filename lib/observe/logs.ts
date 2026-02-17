@@ -28,7 +28,7 @@ Filter Operators:
 - "not": Not equal
 - "lt", "lte": Less than, less than or equal
 - "gt", "gte": Greater than, greater than or equal
-- "contains", "icontains": Contains (case sensitive/insensitive)
+- "icontains": Contains (case insensitive)
 - "startswith", "endswith": String prefix/suffix match
 - "in": Value in list
 - "isnull": Check if null (value: [true] or [false])
@@ -49,7 +49,7 @@ EXAMPLE FILTERS:
 {
   "cost": {"operator": "gt", "value": [0.01]},
   "model": {"operator": "", "value": ["gpt-4"]},
-  "customer_identifier": {"operator": "contains", "value": ["user"]},
+  "customer_identifier": {"operator": "icontains", "value": ["user"]},
   "metadata__session_id": {"operator": "", "value": ["abc123"]}
 }`,
     {
@@ -61,7 +61,7 @@ EXAMPLE FILTERS:
       is_test: z.boolean().optional().describe("Filter by test environment (true) or production (false)"),
       all_envs: z.boolean().optional().describe("Include logs from all environments"),
       filters: z.record(z.string(), z.object({
-        operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
+        operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
         value: z.array(z.any()).describe("Filter value(s) as array")
       })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array."),
       include_fields: z.array(z.string()).optional().describe("Fields to include in response. Defaults to summary fields (unique_id, model, cost, status_code, latency, timestamp, customer_identifier, prompt_tokens, completion_tokens, status, error_message, log_type). Use get_log_detail for full log data.")

@@ -28,7 +28,7 @@ Filter Operators:
 - "not": Not equal
 - "lt", "lte": Less than, less than or equal
 - "gt", "gte": Greater than, greater than or equal
-- "contains", "icontains": Contains (case sensitive/insensitive)
+- "icontains": Contains (case insensitive)
 - "startswith", "endswith": String prefix/suffix match
 - "in": Value in list
 - "isnull": Check if null
@@ -78,7 +78,7 @@ RESPONSE FIELDS:
       end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
       environment: z.string().optional().describe("Filter by environment (e.g., 'production', 'test')"),
       filters: z.record(z.string(), z.object({
-        operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
+        operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
         value: z.array(z.any()).describe("Filter value(s) as array")
       })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array.")
     },
