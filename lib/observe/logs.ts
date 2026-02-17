@@ -56,7 +56,7 @@ EXAMPLE FILTERS:
       page_size: z.number().optional().describe("Number of logs per page (1-50, default 20)"),
       page: z.number().optional().describe("Page number (default 1)"),
       sort_by: z.enum(["id", "-id", "cost", "-cost", "latency", "-latency", "time_to_first_token", "-time_to_first_token", "prompt_tokens", "-prompt_tokens", "completion_tokens", "-completion_tokens", "all_tokens", "-all_tokens"]).optional().describe("Sort field. Prefix with - for descending order."),
-      start_time: z.string().optional().describe("Start time in ISO 8601 format. Default: 1 hour ago"),
+      start_time: z.string().optional().describe("Start time in ISO 8601 format. Default: 1 hour ago. Maximum: 1 week ago"),
       end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
       is_test: z.boolean().optional().describe("Filter by test environment (true) or production (false)"),
       all_envs: z.boolean().optional().describe("Include logs from all environments"),
@@ -75,7 +75,11 @@ EXAMPLE FILTERS:
         sort_by,
         fetch_filters: "false",
       };
-      if (start_time) queryParams.start_time = start_time;
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const resolvedStart = start_time || oneHourAgo;
+      // Clamp: don't allow start_time older than 1 week
+      queryParams.start_time = new Date(resolvedStart) < oneWeekAgo ? oneWeekAgo.toISOString() : resolvedStart;
       if (end_time) queryParams.end_time = end_time;
       if (is_test !== undefined) queryParams.is_test = is_test.toString();
       if (all_envs !== undefined) queryParams.all_envs = all_envs.toString();
