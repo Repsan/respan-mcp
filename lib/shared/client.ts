@@ -53,6 +53,9 @@ export async function keywordsRequest(
   const queryString = new URLSearchParams(filteredParams).toString();
   const url = `${auth.baseUrl}/${endpoint}${queryString ? `?${queryString}` : ""}`;
 
+  console.log(`[MCP] ${method} ${url}`);
+
+  const start = Date.now();
   const response = await fetch(url, {
     method,
     headers: {
@@ -63,9 +66,16 @@ export async function keywordsRequest(
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
+  const elapsed = Date.now() - start;
+
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
+    console.error(`[MCP] ${method} ${endpoint} -> ${response.status} (${elapsed}ms)`, err);
     throw new Error(`API Error: ${response.status} - ${JSON.stringify(err)}`);
   }
-  return await response.json();
+
+  const data = await response.json();
+  const summary = Array.isArray(data) ? `array[${data.length}]` : typeof data === 'object' ? `object` : typeof data;
+  console.log(`[MCP] ${method} ${endpoint} -> ${response.status} (${elapsed}ms) ${summary}`);
+  return data;
 }
