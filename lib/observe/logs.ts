@@ -34,13 +34,14 @@ Filter Operators:
 - "isnull": Check if null (value: [true] or [false])
 
 Filterable Fields:
-- Identifiers: customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id
+- Identifiers: customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id, organization_id, organization_key_id, organization_key_name, customer_email, customer_name
 - Tracing: trace_unique_id, span_name, span_workflow_name
-- Model/Provider: model, deployment_name, provider_id
+- Model/Provider: model, deployment_name, provider_id, prompt_name
 - Status: status_code, status, error_message, failed
-- Metrics: cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens
+- Metrics: cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens, total_request_tokens
 - Config: environment, log_type, stream, temperature, max_tokens
 - Custom metadata: Use "metadata__your_field" prefix
+- Evaluation scores: Use "scores__<evaluator_id>" prefix
 
 By default, only summary fields are returned to keep responses lightweight.
 Use include_fields to customize which fields are returned, or use get_log_detail for full log data including input/output.
@@ -55,13 +56,13 @@ EXAMPLE FILTERS:
     {
       page_size: z.number().optional().describe("Number of logs per page (1-50, default 20)"),
       page: z.number().optional().describe("Page number (default 1)"),
-      sort_by: z.enum(["id", "-id", "cost", "-cost", "latency", "-latency", "time_to_first_token", "-time_to_first_token", "prompt_tokens", "-prompt_tokens", "completion_tokens", "-completion_tokens", "all_tokens", "-all_tokens"]).optional().describe("Sort field. Prefix with - for descending order."),
+      sort_by: z.string().optional().describe("Sort field. Prefix with - for descending order. Options: id, -id, cost, -cost, latency, -latency, time_to_first_token, -time_to_first_token, prompt_tokens, -prompt_tokens, completion_tokens, -completion_tokens, all_tokens, -all_tokens, total_request_tokens, -total_request_tokens, tokens_per_second, -tokens_per_second. Also supports scores__<evaluator_id> for sorting by evaluation scores."),
       start_time: z.string().optional().describe("Start time in ISO 8601 format. Default: 1 hour ago. Maximum: 1 week ago"),
       end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
       is_test: z.boolean().optional().describe("Filter by test environment (true) or production (false)"),
       all_envs: z.boolean().optional().describe("Include logs from all environments"),
       filters: z.record(z.string(), z.object({
-        operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
+        operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'iexact', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
         value: z.array(z.any()).describe("Filter value(s) as array")
       })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array."),
       include_fields: z.array(z.string()).optional().describe("Fields to include in response. Defaults to summary fields (unique_id, model, cost, status_code, latency, timestamp, customer_identifier, prompt_tokens, completion_tokens, status, error_message, log_type). Use get_log_detail for full log data.")
