@@ -7,51 +7,43 @@ export function registerLogTools(server: McpServer, auth: AuthConfig) {
   // --- List Logs ---
   server.tool(
     "list_logs",
-    `List and filter LLM request logs via POST /api/request-logs/list/.
+    `List and filter LLM request logs. Supports pagination, sorting, time range, and powerful server-side filtering via the "filters" parameter.
 
-QUERY PARAMETERS:
-- page_size: Number of logs per page (max 50 for MCP, API supports up to 1000)
+PARAMETERS:
+- page_size: Number of logs per page (1-50, default 20)
 - page: Page number (default 1)
-- sort_by: Sort field. Prefix with - for descending order.
-  Example: -cost (highest cost first), latency (lowest latency first)
-- start_time: ISO 8601 datetime (default: 1 hour ago)
-- end_time: ISO 8601 datetime (default: current time)
-- is_test: "true" or "false" - filter by environment
-- all_envs: "true" or "false" - include all environments
+- sort_by: Sort field with optional - prefix for descending (e.g. "-cost", "latency")
+- start_time / end_time: ISO 8601 time range (default: last 1 hour, max: 1 week ago)
+- is_test: Filter by test (true) or production (false) environment
+- all_envs: Include all environments
+- include_fields: Array of field names to return (defaults to summary fields). Use get_log_detail for full data.
+- filters: Server-side filters object (see below)
 
-FILTERS (passed in POST body):
-Pass filters as an object where each key is a field name and value contains operator and value array.
-Filters are sent in the request body as { filters: { ... } }.
+FILTERS PARAMETER:
+Pass the "filters" parameter to filter logs server-side by any field. It is an object where each key is a filterable field name and the value is {"operator": "<op>", "value": [<values>]}.
 
-Filter Operators:
-- "" (empty): Equal/exact match
-- "not": Not equal
-- "lt", "lte": Less than, less than or equal
-- "gt", "gte": Greater than, greater than or equal
-- "icontains": Contains (case insensitive)
-- "startswith", "endswith": String prefix/suffix match
-- "in": Value in list
-- "isnull": Check if null (value: [true] or [false])
+Operators: "" (exact match), "not", "lt", "lte", "gt", "gte", "icontains", "startswith", "endswith", "in", "isnull"
 
-Filterable Fields:
+Filterable fields:
 - Identifiers: customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id, organization_id, organization_key_id, organization_key_name, customer_email, customer_name
 - Tracing: trace_unique_id, span_name, span_workflow_name
 - Model/Provider: model, deployment_name, provider_id, prompt_name
 - Status: status_code, status, error_message, failed
 - Metrics: cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens, total_request_tokens
 - Config: environment, log_type, stream, temperature, max_tokens
-- Custom metadata: Use "metadata__your_field" prefix
-- Evaluation scores: Use "scores__<evaluator_id>" prefix
+- Custom metadata: Use "metadata__<key>" (e.g. "metadata__session_id")
+- Evaluation scores: Use "scores__<evaluator_id>"
 
-By default, only summary fields are returned to keep responses lightweight.
-Use include_fields to customize which fields are returned, or use get_log_detail for full log data including input/output.
-
-EXAMPLE FILTERS:
+EXAMPLE - calling this tool with filters:
 {
-  "cost": {"operator": "gt", "value": [0.01]},
-  "model": {"operator": "", "value": ["gpt-4"]},
-  "customer_identifier": {"operator": "icontains", "value": ["user"]},
-  "metadata__session_id": {"operator": "", "value": ["abc123"]}
+  "page_size": 10,
+  "sort_by": "-cost",
+  "filters": {
+    "model": {"operator": "", "value": ["gpt-4"]},
+    "customer_identifier": {"operator": "icontains", "value": ["user"]},
+    "cost": {"operator": "gt", "value": [0.01]},
+    "metadata__session_id": {"operator": "", "value": ["abc123"]}
+  }
 }`,
     {
       page_size: z.number().optional().describe("Number of logs per page (1-50, default 20)"),

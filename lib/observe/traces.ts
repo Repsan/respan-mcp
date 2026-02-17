@@ -7,51 +7,40 @@ export function registerTraceTools(server: McpServer, auth: AuthConfig) {
   // --- List Traces ---
   server.tool(
     "list_traces",
-    `List and filter traces with sorting and pagination support.
+    `List and filter traces with sorting, pagination, and powerful server-side filtering via the "filters" parameter.
 
 A trace represents a complete workflow execution containing multiple spans (individual operations).
 
-QUERY PARAMETERS:
-- page_size: Results per page (max 20 for MCP, API supports up to 1000)
+PARAMETERS:
+- page_size: Results per page (1-20, default 10)
 - page: Page number (default 1)
-- sort_by: Sort field. Prefix with - for descending order.
-  Example: -total_cost (highest cost first)
-- start_time: ISO 8601 datetime (default: 1 hour ago)
-- end_time: ISO 8601 datetime (default: current time)
-- environment: Filter by environment (e.g., "production", "test")
+- sort_by: Sort field with optional - prefix for descending (e.g. "-total_cost", "duration")
+- start_time / end_time: ISO 8601 time range (default: last 1 hour)
+- environment: Filter by environment (e.g. "production", "test")
+- filters: Server-side filters object (see below)
 
-FILTERS (in request body):
-Pass filters as an object where each key is a field name and value contains operator and value array.
+FILTERS PARAMETER:
+Pass the "filters" parameter to filter traces server-side by any field. It is an object where each key is a filterable field name and the value is {"operator": "<op>", "value": [<values>]}.
 
-Filter Operators:
-- "" (empty): Equal/exact match
-- "not": Not equal
-- "lt", "lte": Less than, less than or equal
-- "gt", "gte": Greater than, greater than or equal
-- "icontains": Contains (case insensitive)
-- "startswith", "endswith": String prefix/suffix match
-- "in": Value in list
-- "isnull": Check if null
+Operators: "" (exact match), "not", "lt", "lte", "gt", "gte", "icontains", "startswith", "endswith", "in", "isnull"
 
-Filterable Fields:
-- trace_unique_id: Unique trace identifier
-- customer_identifier: Customer/user identifier
-- environment: Environment name
-- span_count: Total spans in trace
-- llm_call_count: Number of LLM calls
-- error_count: Number of errors
-- total_cost: Total cost in USD
-- total_tokens, total_prompt_tokens, total_completion_tokens: Token counts
-- duration: Total duration in seconds
-- workflow_name (span_workflow_name): Workflow identifier
-- Custom metadata: Use "metadata__your_field" prefix
+Filterable fields:
+- trace_unique_id, customer_identifier, environment
+- span_count, llm_call_count, error_count
+- total_cost, total_tokens, total_prompt_tokens, total_completion_tokens
+- duration
+- workflow_name (span_workflow_name)
+- Custom metadata: Use "metadata__<key>" (e.g. "metadata__session_id")
 
-EXAMPLE FILTERS:
+EXAMPLE - calling this tool with filters:
 {
-  "total_cost": {"operator": "gte", "value": [0.01]},
-  "environment": {"operator": "", "value": ["production"]},
-  "error_count": {"operator": "gt", "value": [0]},
-  "customer_identifier": {"operator": "", "value": ["user@example.com"]}
+  "page_size": 10,
+  "sort_by": "-total_cost",
+  "filters": {
+    "customer_identifier": {"operator": "", "value": ["user@example.com"]},
+    "total_cost": {"operator": "gte", "value": [0.01]},
+    "error_count": {"operator": "gt", "value": [0]}
+  }
 }
 
 RESPONSE FIELDS:
