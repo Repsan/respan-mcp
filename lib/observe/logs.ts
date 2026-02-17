@@ -76,14 +76,13 @@ EXAMPLE FILTERS:
       if (is_test !== undefined) queryParams.is_test = is_test.toString();
       if (all_envs !== undefined) queryParams.all_envs = all_envs.toString();
 
-      // Convert filters to the backend body format: { field: { value: [...], operator: "...", connector: "AND" } }
+      // Convert filters to the backend body format: { field: { operator, value } }
       const bodyFilters: Record<string, any> = {};
       if (filters) {
         for (const [field, filter] of Object.entries(filters)) {
           bodyFilters[field] = {
             value: filter.value,
             operator: filter.operator || "",
-            connector: "AND",
           };
         }
       }
