@@ -42,6 +42,9 @@ Filterable Fields:
 - Config: environment, log_type, stream, temperature, max_tokens
 - Custom metadata: Use "metadata__your_field" prefix
 
+By default, only summary fields are returned to keep responses lightweight.
+Use include_fields to customize which fields are returned, or use get_log_detail for full log data including input/output.
+
 EXAMPLE FILTERS:
 {
   "cost": {"operator": "gt", "value": [0.01]},
@@ -60,9 +63,10 @@ EXAMPLE FILTERS:
       filters: z.record(z.string(), z.object({
         operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
         value: z.array(z.any()).describe("Filter value(s) as array")
-      })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array.")
+      })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array."),
+      include_fields: z.array(z.string()).optional().describe("Fields to include in response. Defaults to summary fields (unique_id, model, cost, status_code, latency, timestamp, customer_identifier, prompt_tokens, completion_tokens, status, error_message, log_type). Use get_log_detail for full log data.")
     },
-    async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters }) => {
+    async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters, include_fields }) => {
       const limit = Math.min(page_size, 50);
 
       const queryParams: Record<string, any> = {
@@ -75,6 +79,14 @@ EXAMPLE FILTERS:
       if (end_time) queryParams.end_time = end_time;
       if (is_test !== undefined) queryParams.is_test = is_test.toString();
       if (all_envs !== undefined) queryParams.all_envs = all_envs.toString();
+
+      // Default summary fields to keep responses lightweight; use get_log_detail for full data
+      const DEFAULT_FIELDS = [
+        "unique_id", "model", "cost", "status_code", "latency", "timestamp",
+        "customer_identifier", "prompt_tokens", "completion_tokens", "status",
+        "error_message", "log_type", "time_to_first_token", "tokens_per_second"
+      ];
+      queryParams.include_fields = (include_fields || DEFAULT_FIELDS).join(",");
 
       // Convert filters to the backend body format: { field: { operator, value } }
       const bodyFilters: Record<string, any> = {};
