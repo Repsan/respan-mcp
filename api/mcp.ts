@@ -32,7 +32,26 @@ function extractApiKey(req: VercelRequest): string | undefined {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+  res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+
+  // In stateless mode, GET (SSE stream) and DELETE (session close) are not needed.
+  // Reject early to avoid holding a Vercel function open for the max duration.
+  if (req.method === 'GET') {
+    return res.status(405).json({
+      jsonrpc: '2.0',
+      error: { code: -32000, message: 'SSE streams not supported in stateless mode. Use POST for tool calls.' },
+      id: null,
+    });
+  }
+  if (req.method === 'DELETE') {
+    return res.status(405).json({
+      jsonrpc: '2.0',
+      error: { code: -32000, message: 'Session management not supported in stateless mode.' },
+      id: null,
+    });
+  }
 
   try {
     const apiKey = extractApiKey(req);
