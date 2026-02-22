@@ -1,5 +1,7 @@
 // Simple local HTTP server for testing the MCP HTTP handler
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { registerLogTools } from './dist/lib/observe/logs.js';
@@ -30,16 +32,61 @@ async function handleAuth(req, res) {
   let parsed;
   try { parsed = JSON.parse(body); } catch { parsed = {}; }
 
-  const { action, email, password, refresh } = parsed;
+  const { action, email, password, refresh, redirect_uri, code, state } = parsed;
 
-  if (!action || (action !== 'login' && action !== 'refresh')) {
+  const validActions = ['login', 'refresh', 'google_url', 'google_jwt'];
+  if (!action || !validActions.includes(action)) {
     res.writeHead(400, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ error: 'Invalid action. Use "login" or "refresh".' }));
+    return res.end(JSON.stringify({ error: `Invalid action. Use one of: ${validActions.join(', ')}` }));
   }
 
   const baseUrl = req.headers['keywords-api-base-url'] || process.env.KEYWORDS_API_BASE_URL || DEFAULT_BASE_URL;
   const origin = baseUrl.replace(/\/api\/?$/, '');
 
+  // --- Google OAuth: get authorization URL ---
+  if (action === 'google_url') {
+    if (!redirect_uri) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'redirect_uri is required for google_url.' }));
+    }
+    const url = `${origin}/auth/o/google-oauth2/?redirect_uri=${encodeURIComponent(redirect_uri)}`;
+    try {
+      const response = await fetch(url, { method: 'GET', redirect: 'manual' });
+      const data = await response.json();
+      res.writeHead(response.status, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify(data));
+    } catch (error) {
+      console.error('Auth proxy error:', error);
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Failed to reach authentication backend.' }));
+    }
+  }
+
+  // --- Google OAuth: exchange code for JWT ---
+  if (action === 'google_jwt') {
+    if (!code || !state) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'code and state are required for google_jwt.' }));
+    }
+    const url = `${origin}/auth/o/google-oauth2/`;
+    const formBody = new URLSearchParams({ code, state });
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formBody.toString(),
+      });
+      const data = await response.json();
+      res.writeHead(response.status, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify(data));
+    } catch (error) {
+      console.error('Auth proxy error:', error);
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Failed to reach authentication backend.' }));
+    }
+  }
+
+  // --- Email/password login or token refresh ---
   let backendUrl, reqBody;
 
   if (action === 'login') {
@@ -80,6 +127,19 @@ const httpServer = http.createServer(async (req, res) => {
   // Route: /auth
   if (url.pathname === '/auth') {
     return handleAuth(req, res);
+  }
+
+  // Route: /login — serve static file
+  if (url.pathname === '/login' && req.method === 'GET') {
+    const filePath = path.join(path.dirname(new URL(import.meta.url).pathname), 'public', 'login');
+    try {
+      const html = fs.readFileSync(filePath, 'utf-8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(html);
+    } catch {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      return res.end('Not found');
+    }
   }
 
   // Route: / (MCP handler)
@@ -127,6 +187,7 @@ const httpServer = http.createServer(async (req, res) => {
 
 httpServer.listen(PORT, () => {
   console.log(`MCP dev server running at http://localhost:${PORT}/`);
-  console.log('  POST /      - MCP handler (Authorization: Bearer YOUR_KEY)');
-  console.log('  POST /auth  - JWT login/refresh');
+  console.log('  POST /           - MCP handler (Authorization: Bearer YOUR_KEY)');
+  console.log('  POST /auth       - JWT login/refresh/google');
+  console.log('  GET  /login - OAuth login page');
 });

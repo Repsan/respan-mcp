@@ -2,7 +2,8 @@
   "buildCommand": "npm ci && npm run build",
   "rewrites": [
     { "source": "/mcp", "destination": "/api/mcp" },
-    { "source": "/auth", "destination": "/api/auth" }
+    { "source": "/auth", "destination": "/api/auth" },
+    { "source": "/login", "destination": "/login" }
   ],
   "headers": [
     {

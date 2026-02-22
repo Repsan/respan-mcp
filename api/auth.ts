@@ -7,10 +7,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
-  const { action, email, password, refresh } = req.body ?? {};
+  const { action, email, password, refresh, redirect_uri, code, state } = req.body ?? {};
 
-  if (!action || (action !== 'login' && action !== 'refresh')) {
-    return res.status(400).json({ error: 'Invalid action. Use "login" or "refresh".' });
+  const validActions = ['login', 'refresh', 'google_url', 'google_jwt'];
+  if (!action || !validActions.includes(action)) {
+    return res.status(400).json({ error: `Invalid action. Use one of: ${validActions.join(', ')}` });
   }
 
   const baseUrl = (req.headers['keywords-api-base-url'] as string)
@@ -21,6 +22,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // The JWT endpoints live at /auth/jwt/... which is outside the /api/ prefix.
   const origin = baseUrl.replace(/\/api\/?$/, '');
 
+  // --- Google OAuth: get authorization URL ---
+  if (action === 'google_url') {
+    if (!redirect_uri) {
+      return res.status(400).json({ error: 'redirect_uri is required for google_url.' });
+    }
+    const url = `${origin}/auth/o/google-oauth2/?redirect_uri=${encodeURIComponent(redirect_uri)}`;
+    try {
+      const response = await fetch(url, { method: 'GET', redirect: 'manual' });
+      const data = await response.json();
+      return res.status(response.status).json(data);
+    } catch (error) {
+      console.error('Auth proxy error:', error);
+      return res.status(502).json({ error: 'Failed to reach authentication backend.' });
+    }
+  }
+
+  // --- Google OAuth: exchange code for JWT ---
+  if (action === 'google_jwt') {
+    if (!code || !state) {
+      return res.status(400).json({ error: 'code and state are required for google_jwt.' });
+    }
+    const url = `${origin}/auth/o/google-oauth2/`;
+    const formBody = new URLSearchParams({ code, state });
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formBody.toString(),
+      });
+      const data = await response.json();
+      return res.status(response.status).json(data);
+    } catch (error) {
+      console.error('Auth proxy error:', error);
+      return res.status(502).json({ error: 'Failed to reach authentication backend.' });
+    }
+  }
+
+  // --- Email/password login or token refresh ---
   let backendUrl: string;
   let body: Record<string, string>;
 

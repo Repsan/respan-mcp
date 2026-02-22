@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keywords AI MCP - Login</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+        }
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+        .subtitle { color: #666; font-size: 1rem; margin-bottom: 2rem; }
+        .card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 1rem;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: #999;
+            font-size: 0.85rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .divider::before { margin-right: 12px; }
+        .divider::after { margin-left: 12px; }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #444;
+        }
+        input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: #6483F0; }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.85; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-google {
+            background: white;
+            color: #444;
+            border: 1px solid #d0d0d0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-google svg { flex-shrink: 0; }
+        .btn-primary { background: #6483F0; color: white; }
+        .error-msg {
+            background: #fef2f2;
+            color: #b91c1c;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .status-msg {
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        /* Token display */
+        #token-section { display: none; }
+        #token-section .card { position: relative; }
+        .token-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .token-value {
+            background: #1a1a1a;
+            color: #f0f0f0;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+        }
+        .copy-btn {
+            display: inline-block;
+            width: auto;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            background: #e8e8e8;
+            color: #444;
+            border-radius: 4px;
+        }
+        .copy-btn.copied { background: #d1fae5; color: #065f46; }
+        .token-block { margin-bottom: 16px; }
+        .token-block:last-child { margin-bottom: 0; }
+
+        a { color: #6483F0; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .links {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #999;
+        }
+        .links a { margin: 0 8px; }
+    </style>
+</head>
+<body>
+    <!-- Login section -->
+    <div id="login-section">
+        <h1>Keywords AI MCP</h1>
+        <p class="subtitle">Sign in to get your MCP access token</p>
+
+        <div class="card">
+            <div id="status" class="status-msg"></div>
+            <div id="error" class="error-msg"></div>
+
+            <!-- Google OAuth -->
+            <button class="btn-google" id="google-btn" type="button">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.0 24.0 0 0 0 0 21.56l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Sign in with Google
+            </button>
+
+            <div class="divider">or</div>
+
+            <!-- Email / Password -->
+            <form id="login-form">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+                <button type="submit" class="btn-primary" id="login-btn">Sign in</button>
+            </form>
+        </div>
+
+        <div class="links">
+            <a href="https://platform.keywordsai.co/platform/signup">Create account</a>
+            <a href="https://docs.keywordsai.co/documentation/resources/mcp">Docs</a>
+        </div>
+    </div>
+
+    <!-- Token display section -->
+    <div id="token-section">
+        <h1>You're in!</h1>
+        <p class="subtitle">Copy your access token or the ready-to-paste MCP config below.</p>
+
+        <div class="card">
+            <div class="token-block">
+                <div class="token-label">Access Token</div>
+                <div class="token-value" id="access-token"></div>
+                <button class="copy-btn" data-target="access-token">Copy token</button>
+            </div>
+
+            <div class="token-block">
+                <div class="token-label">MCP Client Config (paste into ~/.claude.json or mcp.json)</div>
+                <div class="token-value" id="mcp-config"></div>
+                <button class="copy-btn" data-target="mcp-config">Copy config</button>
+            </div>
+        </div>
+
+        <div class="links">
+            <a href="javascript:void(0)" id="logout-link">Sign in again</a>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const $ = (sel) => document.querySelector(sel);
+        const errorEl = $('#error');
+        const statusEl = $('#status');
+
+        function showError(msg) {
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+            statusEl.style.display = 'none';
+        }
+        function showStatus(msg) {
+            statusEl.textContent = msg;
+            statusEl.style.display = 'block';
+            errorEl.style.display = 'none';
+        }
+        function clearMessages() {
+            errorEl.style.display = 'none';
+            statusEl.style.display = 'none';
+        }
+
+        function showTokens(access) {
+            $('#login-section').style.display = 'none';
+            $('#token-section').style.display = 'block';
+            $('#access-token').textContent = access;
+
+            const config = JSON.stringify({
+                mcpServers: {
+                    "keywords-ai": {
+                        url: "https://mcp.keywordsai.co/mcp",
+                        headers: {
+                            Authorization: "Bearer " + access
+                        }
+                    }
+                }
+            }, null, 2);
+            $('#mcp-config').textContent = config;
+        }
+
+        // Copy buttons
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.copy-btn');
+            if (!btn) return;
+            const target = btn.dataset.target;
+            const text = document.getElementById(target).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = target === 'access-token' ? 'Copy token' : 'Copy config';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        });
+
+        // Logout link
+        $('#logout-link').addEventListener('click', () => {
+            $('#token-section').style.display = 'none';
+            $('#login-section').style.display = 'block';
+            clearMessages();
+        });
+
+        // --- Google OAuth: start ---
+        $('#google-btn').addEventListener('click', async () => {
+            clearMessages();
+            $('#google-btn').disabled = true;
+            try {
+                const redirectUri = window.location.origin + '/login';
+                const resp = await fetch('/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'google_url', redirect_uri: redirectUri })
+                });
+                const data = await resp.json();
+                if (data.authorization_url) {
+                    window.location.href = data.authorization_url;
+                } else {
+                    showError(data.error || 'Failed to get Google authorization URL.');
+                    $('#google-btn').disabled = false;
+                }
+            } catch (err) {
+                showError('Network error. Please try again.');
+                $('#google-btn').disabled = false;
+            }
+        });
+
+        // --- Google OAuth: callback ---
+        async function handleOAuthCallback() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const state = params.get('state');
+            if (!code || !state) return;
+
+            // Clean URL
+            window.history.replaceState({}, document.title, '/login');
+
+            showStatus('Exchanging authorization code...');
+            $('#google-btn').disabled = true;
+
+            try {
+                const resp = await fetch('/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'google_jwt', code, state })
+                });
+                const data = await resp.json();
+                if (data.access) {
+                    showTokens(data.access);
+                } else {
+                    showError(data.detail || data.error || 'Failed to exchange code for token.');
+                    $('#google-btn').disabled = false;
+                }
+            } catch (err) {
+                showError('Network error during token exchange.');
+                $('#google-btn').disabled = false;
+            }
+        }
+
+        // --- Email / Password login ---
+        $('#login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages();
+
+            const email = $('#email').value.trim();
+            const password = $('#password').value;
+            if (!email || !password) return;
+
+            const btn = $('#login-btn');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
+            try {
+                const resp = await fetch('/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', email, password })
+                });
+                const data = await resp.json();
+                if (data.access) {
+                    showTokens(data.access);
+                } else {
+                    showError(data.detail || data.error || 'Invalid email or password.');
+                }
+            } catch (err) {
+                showError('Network error. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign in';
+            }
+        });
+
+        // On page load, check for OAuth callback
+        handleOAuthCallback();
+    })();
+    </script>
+</body>
+</html>
