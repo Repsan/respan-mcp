@@ -131,7 +131,7 @@ const httpServer = http.createServer(async (req, res) => {
 
   // Route: /login — serve static file
   if (url.pathname === '/login' && req.method === 'GET') {
-    const filePath = path.join(path.dirname(new URL(import.meta.url).pathname), 'public', 'login');
+    const filePath = path.join(path.dirname(new URL(import.meta.url).pathname), 'public', 'login.html');
     try {
       const html = fs.readFileSync(filePath, 'utf-8');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });

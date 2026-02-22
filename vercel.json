@@ -3,7 +3,7 @@
   "rewrites": [
     { "source": "/mcp", "destination": "/api/mcp" },
     { "source": "/auth", "destination": "/api/auth" },
-    { "source": "/login", "destination": "/login" }
+    { "source": "/login", "destination": "/login.html" }
   ],
   "headers": [
     {
