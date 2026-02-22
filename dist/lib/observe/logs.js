@@ -2,60 +2,55 @@ import { z } from "zod";
 import { keywordsRequest, validatePathParam } from "../shared/client.js";
 export function registerLogTools(server, auth) {
     // --- List Logs ---
-    server.tool("list_logs", `List and filter LLM request logs via POST /api/request-logs/list/.
+    server.tool("list_logs", `List and filter LLM request logs. Supports pagination, sorting, time range, and server-side filtering.
 
-QUERY PARAMETERS:
-- page_size: Number of logs per page (max 50 for MCP, API supports up to 1000)
+IMPORTANT: Use the "filters" parameter to filter results server-side. Do NOT fetch all logs and filter client-side.
+
+PARAMETERS:
+- page_size: Number of logs per page (1-50, default 20)
 - page: Page number (default 1)
-- sort_by: Sort field. Prefix with - for descending order.
-  Example: -cost (highest cost first), latency (lowest latency first)
-- start_time: ISO 8601 datetime (default: 1 hour ago)
-- end_time: ISO 8601 datetime (default: current time)
-- is_test: "true" or "false" - filter by environment
-- all_envs: "true" or "false" - include all environments
+- sort_by: Sort field with optional - prefix for descending (e.g. "-cost", "latency")
+- start_time / end_time: ISO 8601 time range (default: last 1 hour, max: 1 week ago)
+- is_test: Filter by test (true) or production (false) environment
+- all_envs: Include all environments
+- include_fields: Array of field names to return (defaults to summary fields). Use get_log_detail for full data.
+- filters: Array of server-side filter objects. Each filter has: field (string), operator (string), value (array). See below.
 
-FILTERS (passed in POST body):
-Pass filters as an object where each key is a field name and value contains operator and value array.
-Filters are sent in the request body as { filters: { ... } }.
+FILTERS - supported operators:
+"" (exact match), "not", "lt", "lte", "gt", "gte", "icontains", "startswith", "endswith", "in", "isnull"
 
-Filter Operators:
-- "" (empty): Equal/exact match
-- "not": Not equal
-- "lt", "lte": Less than, less than or equal
-- "gt", "gte": Greater than, greater than or equal
-- "contains", "icontains": Contains (case sensitive/insensitive)
-- "startswith", "endswith": String prefix/suffix match
-- "in": Value in list
-- "isnull": Check if null (value: [true] or [false])
+FILTERS - supported fields:
+customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id, organization_id, organization_key_id, organization_key_name, customer_email, customer_name, trace_unique_id, span_name, span_workflow_name, model, deployment_name, provider_id, prompt_name, status_code, status, error_message, failed, cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens, total_request_tokens, environment, log_type, stream, temperature, max_tokens, metadata__<key>, scores__<evaluator_id>
 
-Filterable Fields:
-- Identifiers: customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id
-- Tracing: trace_unique_id, span_name, span_workflow_name
-- Model/Provider: model, deployment_name, provider_id
-- Status: status_code, status, error_message, failed
-- Metrics: cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens
-- Config: environment, log_type, stream, temperature, max_tokens
-- Custom metadata: Use "metadata__your_field" prefix
-
-EXAMPLE FILTERS:
+EXAMPLE - find all error logs (status_code != 200):
 {
-  "cost": {"operator": "gt", "value": [0.01]},
-  "model": {"operator": "", "value": ["gpt-4"]},
-  "customer_identifier": {"operator": "contains", "value": ["user"]},
-  "metadata__session_id": {"operator": "", "value": ["abc123"]}
+  "filters": [{"field": "status_code", "operator": "not", "value": [200]}],
+  "sort_by": "-id",
+  "page_size": 20
+}
+
+EXAMPLE - find logs for a specific model and customer:
+{
+  "filters": [
+    {"field": "model", "operator": "", "value": ["gpt-4"]},
+    {"field": "customer_identifier", "operator": "icontains", "value": ["user"]},
+    {"field": "cost", "operator": "gt", "value": [0.01]}
+  ]
 }`, {
         page_size: z.number().optional().describe("Number of logs per page (1-50, default 20)"),
         page: z.number().optional().describe("Page number (default 1)"),
-        sort_by: z.enum(["id", "-id", "cost", "-cost", "latency", "-latency", "time_to_first_token", "-time_to_first_token", "prompt_tokens", "-prompt_tokens", "completion_tokens", "-completion_tokens", "all_tokens", "-all_tokens"]).optional().describe("Sort field. Prefix with - for descending order."),
-        start_time: z.string().optional().describe("Start time in ISO 8601 format. Default: 1 hour ago"),
+        sort_by: z.string().optional().describe("Sort field. Prefix with - for descending order. Options: id, -id, cost, -cost, latency, -latency, time_to_first_token, -time_to_first_token, prompt_tokens, -prompt_tokens, completion_tokens, -completion_tokens, all_tokens, -all_tokens, total_request_tokens, -total_request_tokens, tokens_per_second, -tokens_per_second. Also supports scores__<evaluator_id> for sorting by evaluation scores."),
+        start_time: z.string().optional().describe("Start time in ISO 8601 format. Default: 1 hour ago. Maximum: 1 week ago"),
         end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
         is_test: z.boolean().optional().describe("Filter by test environment (true) or production (false)"),
         all_envs: z.boolean().optional().describe("Include logs from all environments"),
-        filters: z.record(z.string(), z.object({
-            operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
-            value: z.array(z.any()).describe("Filter value(s) as array")
-        })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array.")
-    }, async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters }) => {
+        filters: z.array(z.object({
+            field: z.string().describe("Field to filter on. Supported: customer_identifier, custom_identifier, thread_identifier, prompt_id, unique_id, trace_unique_id, span_name, span_workflow_name, model, deployment_name, provider_id, prompt_name, status_code, status, error_message, failed, cost, latency, tokens_per_second, time_to_first_token, prompt_tokens, completion_tokens, total_request_tokens, environment, log_type, stream, temperature, max_tokens. For custom metadata use metadata__<key>. For scores use scores__<evaluator_id>."),
+            operator: z.enum(["", "not", "lt", "lte", "gt", "gte", "icontains", "iexact", "contains", "startswith", "endswith", "in", "isnull"]).describe("Filter operator. '' = exact match, 'not' = not equal, 'lt'/'lte' = less than, 'gt'/'gte' = greater than, 'icontains' = case-insensitive contains, 'in' = value in list, 'isnull' = check null"),
+            value: z.array(z.any()).describe("Filter value(s) as array, e.g. [200], ['gpt-4'], [true]")
+        })).optional().describe("Array of server-side filters. Each filter has field, operator, and value. Example: [{\"field\": \"status_code\", \"operator\": \"not\", \"value\": [200]}]"),
+        include_fields: z.array(z.string()).optional().describe("Fields to include in response. Defaults to summary fields (unique_id, model, cost, status_code, latency, timestamp, customer_identifier, prompt_tokens, completion_tokens, status, error_message, log_type). Use get_log_detail for full log data.")
+    }, async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters, include_fields }) => {
         const limit = Math.min(page_size, 50);
         const queryParams = {
             page_size: limit,
@@ -63,22 +58,31 @@ EXAMPLE FILTERS:
             sort_by,
             fetch_filters: "false",
         };
-        if (start_time)
-            queryParams.start_time = start_time;
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const resolvedStart = start_time || oneHourAgo;
+        // Clamp: don't allow start_time older than 1 week
+        queryParams.start_time = new Date(resolvedStart) < oneWeekAgo ? oneWeekAgo.toISOString() : resolvedStart;
         if (end_time)
             queryParams.end_time = end_time;
         if (is_test !== undefined)
             queryParams.is_test = is_test.toString();
         if (all_envs !== undefined)
             queryParams.all_envs = all_envs.toString();
-        // Convert filters to the backend body format: { field: { value: [...], operator: "...", connector: "AND" } }
+        // Default summary fields to keep responses lightweight; use get_log_detail for full data
+        const DEFAULT_FIELDS = [
+            "unique_id", "model", "cost", "status_code", "latency", "timestamp",
+            "customer_identifier", "prompt_tokens", "completion_tokens", "status",
+            "error_message", "log_type", "time_to_first_token", "tokens_per_second"
+        ];
+        queryParams.include_fields = (include_fields || DEFAULT_FIELDS).join(",");
+        // Convert filters array to the backend body format: { field: { operator, value } }
         const bodyFilters = {};
         if (filters) {
-            for (const [field, filter] of Object.entries(filters)) {
-                bodyFilters[field] = {
-                    value: filter.value,
-                    operator: filter.operator || "",
-                    connector: "AND",
+            for (const f of filters) {
+                bodyFilters[f.field] = {
+                    value: f.value,
+                    operator: f.operator || "",
                 };
             }
         }

@@ -2,51 +2,38 @@ import { z } from "zod";
 import { keywordsRequest, validatePathParam } from "../shared/client.js";
 export function registerTraceTools(server, auth) {
     // --- List Traces ---
-    server.tool("list_traces", `List and filter traces with sorting and pagination support.
+    server.tool("list_traces", `List and filter traces with sorting, pagination, and server-side filtering.
 
 A trace represents a complete workflow execution containing multiple spans (individual operations).
 
-QUERY PARAMETERS:
-- page_size: Results per page (max 20 for MCP, API supports up to 1000)
+IMPORTANT: Use the "filters" parameter to filter results server-side. Do NOT fetch all traces and filter client-side.
+
+PARAMETERS:
+- page_size: Results per page (1-20, default 10)
 - page: Page number (default 1)
-- sort_by: Sort field. Prefix with - for descending order.
-  Example: -total_cost (highest cost first)
-- start_time: ISO 8601 datetime (default: 1 hour ago)
-- end_time: ISO 8601 datetime (default: current time)
-- environment: Filter by environment (e.g., "production", "test")
+- sort_by: Sort field with optional - prefix for descending (e.g. "-total_cost", "duration")
+- start_time / end_time: ISO 8601 time range (default: last 1 hour)
+- environment: Filter by environment (e.g. "production", "test")
+- filters: Array of server-side filter objects. Each filter has: field (string), operator (string), value (array). See below.
 
-FILTERS (in request body):
-Pass filters as an object where each key is a field name and value contains operator and value array.
+FILTERS - supported operators:
+"" (exact match), "not", "lt", "lte", "gt", "gte", "icontains", "startswith", "endswith", "in", "isnull"
 
-Filter Operators:
-- "" (empty): Equal/exact match
-- "not": Not equal
-- "lt", "lte": Less than, less than or equal
-- "gt", "gte": Greater than, greater than or equal
-- "contains", "icontains": Contains (case sensitive/insensitive)
-- "startswith", "endswith": String prefix/suffix match
-- "in": Value in list
-- "isnull": Check if null
+FILTERS - supported fields:
+trace_unique_id, customer_identifier, environment, span_count, llm_call_count, error_count, total_cost, total_tokens, total_prompt_tokens, total_completion_tokens, duration, workflow_name (span_workflow_name), metadata__<key>
 
-Filterable Fields:
-- trace_unique_id: Unique trace identifier
-- customer_identifier: Customer/user identifier
-- environment: Environment name
-- span_count: Total spans in trace
-- llm_call_count: Number of LLM calls
-- error_count: Number of errors
-- total_cost: Total cost in USD
-- total_tokens, total_prompt_tokens, total_completion_tokens: Token counts
-- duration: Total duration in seconds
-- workflow_name (span_workflow_name): Workflow identifier
-- Custom metadata: Use "metadata__your_field" prefix
-
-EXAMPLE FILTERS:
+EXAMPLE - find traces with errors:
 {
-  "total_cost": {"operator": "gte", "value": [0.01]},
-  "environment": {"operator": "", "value": ["production"]},
-  "error_count": {"operator": "gt", "value": [0]},
-  "customer_identifier": {"operator": "", "value": ["user@example.com"]}
+  "filters": [{"field": "error_count", "operator": "gt", "value": [0]}],
+  "sort_by": "-total_cost"
+}
+
+EXAMPLE - find traces for a specific customer:
+{
+  "filters": [
+    {"field": "customer_identifier", "operator": "", "value": ["user@example.com"]},
+    {"field": "total_cost", "operator": "gte", "value": [0.01]}
+  ]
 }
 
 RESPONSE FIELDS:
@@ -71,10 +58,11 @@ RESPONSE FIELDS:
         start_time: z.string().optional().describe("Start time in ISO 8601 format. Default: 1 hour ago"),
         end_time: z.string().optional().describe("End time in ISO 8601 format. Default: current time"),
         environment: z.string().optional().describe("Filter by environment (e.g., 'production', 'test')"),
-        filters: z.record(z.string(), z.object({
-            operator: z.string().describe("Filter operator: '', 'not', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains', 'startswith', 'endswith', 'in', 'isnull'"),
-            value: z.array(z.any()).describe("Filter value(s) as array")
-        })).optional().describe("Filter object. Keys are field names, values have 'operator' and 'value' array.")
+        filters: z.array(z.object({
+            field: z.string().describe("Field to filter on. Supported: trace_unique_id, customer_identifier, environment, span_count, llm_call_count, error_count, total_cost, total_tokens, total_prompt_tokens, total_completion_tokens, duration, span_workflow_name. For custom metadata use metadata__<key>."),
+            operator: z.enum(["", "not", "lt", "lte", "gt", "gte", "icontains", "iexact", "contains", "startswith", "endswith", "in", "isnull"]).describe("Filter operator. '' = exact match, 'not' = not equal, 'lt'/'lte' = less than, 'gt'/'gte' = greater than, 'icontains' = case-insensitive contains, 'in' = value in list, 'isnull' = check null"),
+            value: z.array(z.any()).describe("Filter value(s) as array, e.g. [0], ['production'], [true]")
+        })).optional().describe("Array of server-side filters. Each filter has field, operator, and value. Example: [{\"field\": \"error_count\", \"operator\": \"gt\", \"value\": [0]}]")
     }, async ({ page_size = 10, page = 1, sort_by = "-timestamp", start_time, end_time, environment, filters }) => {
         const limit = Math.min(page_size, 20);
         const queryParams = { page_size: limit, page, sort_by };
@@ -84,10 +72,20 @@ RESPONSE FIELDS:
             queryParams.end_time = end_time;
         if (environment)
             queryParams.environment = environment;
+        // Convert filters array to the backend body format: { field: { operator, value } }
+        const bodyFilters = {};
+        if (filters) {
+            for (const f of filters) {
+                bodyFilters[f.field] = {
+                    value: f.value,
+                    operator: f.operator || "",
+                };
+            }
+        }
         const data = await keywordsRequest("traces/list/", auth, {
             method: "POST",
             queryParams,
-            body: { filters: filters || {} }
+            body: { filters: bodyFilters }
         });
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     });

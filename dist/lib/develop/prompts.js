@@ -108,13 +108,12 @@ Returns complete version data including:
 - created_by: Creator information
 - metadata: Custom metadata
 
-Use list_prompts to find prompt_id, then list_prompt_versions to find version_id.`, {
+Use list_prompts to find prompt_id, then list_prompt_versions to find the version number.`, {
         prompt_id: z.string().describe("Unique prompt identifier (from list_prompts)"),
-        version_id: z.string().describe("Version identifier (from list_prompt_versions)")
-    }, async ({ prompt_id, version_id }) => {
+        version: z.number().describe("Version number (integer, e.g. 1, 2, 3 — from the 'version' field in list_prompt_versions)")
+    }, async ({ prompt_id, version }) => {
         const safePromptId = validatePathParam(prompt_id, "prompt_id");
-        const safeVersionId = validatePathParam(version_id, "version_id");
-        const data = await keywordsRequest(`prompts/${safePromptId}/versions/${safeVersionId}/`, auth);
+        const data = await keywordsRequest(`prompts/${safePromptId}/versions/${version}/`, auth);
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     });
 }

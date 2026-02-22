@@ -1,7 +1,8 @@
 {
   "buildCommand": "npm ci && npm run build",
   "rewrites": [
-    { "source": "/mcp", "destination": "/api/mcp" }
+    { "source": "/mcp", "destination": "/api/mcp" },
+    { "source": "/auth", "destination": "/api/auth" }
   ],
   "headers": [
     {
@@ -14,6 +15,9 @@
   "functions": {
     "api/mcp.ts": {
       "maxDuration": 800
+    },
+    "api/auth.ts": {
+      "maxDuration": 30
     }
   }
 }
