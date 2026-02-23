@@ -211,6 +211,34 @@
         const errorEl = $('#error');
         const statusEl = $('#status');
 
+        // --- OAuth mode detection ---
+        const pageParams = new URLSearchParams(window.location.search);
+        const oauthMode = pageParams.get('mode') === 'oauth';
+        let oauthParams = null;
+
+        if (oauthMode) {
+            oauthParams = {
+                client_id: pageParams.get('client_id'),
+                redirect_uri: pageParams.get('redirect_uri'),
+                code_challenge: pageParams.get('code_challenge'),
+                state: pageParams.get('state'),
+            };
+            // Update subtitle for OAuth mode
+            $('.subtitle').textContent = 'Sign in to authorize Keywords AI MCP access';
+        }
+
+        // Restore OAuth params from sessionStorage (after Google redirect)
+        const savedOAuth = sessionStorage.getItem('oauth_params');
+        if (savedOAuth && !oauthMode) {
+            try {
+                const parsed = JSON.parse(savedOAuth);
+                if (parsed.client_id && parsed.redirect_uri && parsed.code_challenge && parsed.state) {
+                    oauthParams = parsed;
+                    $('.subtitle').textContent = 'Sign in to authorize Keywords AI MCP access';
+                }
+            } catch {}
+        }
+
         function showError(msg) {
             errorEl.textContent = msg;
             errorEl.style.display = 'block';
@@ -226,7 +254,39 @@
             statusEl.style.display = 'none';
         }
 
+        async function handleOAuthCodeExchange(jwt) {
+            showStatus('Authorizing...');
+            try {
+                const resp = await fetch('/oauth/code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jwt,
+                        client_id: oauthParams.client_id,
+                        redirect_uri: oauthParams.redirect_uri,
+                        code_challenge: oauthParams.code_challenge,
+                        state: oauthParams.state,
+                    }),
+                });
+                const data = await resp.json();
+                if (data.redirect_url) {
+                    sessionStorage.removeItem('oauth_params');
+                    window.location.href = data.redirect_url;
+                } else {
+                    showError(data.error || 'Failed to generate authorization code.');
+                }
+            } catch {
+                showError('Network error during authorization.');
+            }
+        }
+
         function showTokens(access) {
+            // If in OAuth mode, exchange the JWT for an auth code and redirect
+            if (oauthParams) {
+                handleOAuthCodeExchange(access);
+                return;
+            }
+
             $('#login-section').style.display = 'none';
             $('#token-section').style.display = 'block';
             $('#access-token').textContent = access;
@@ -271,6 +331,12 @@
         $('#google-btn').addEventListener('click', async () => {
             clearMessages();
             $('#google-btn').disabled = true;
+
+            // Save OAuth params to sessionStorage before Google redirect
+            if (oauthParams) {
+                sessionStorage.setItem('oauth_params', JSON.stringify(oauthParams));
+            }
+
             try {
                 const redirectUri = window.location.origin + '/login';
                 const resp = await fetch('/auth', {
@@ -292,11 +358,14 @@
         });
 
         // --- Google OAuth: callback ---
-        async function handleOAuthCallback() {
+        async function handleGoogleCallback() {
             const params = new URLSearchParams(window.location.search);
             const code = params.get('code');
             const state = params.get('state');
             if (!code || !state) return;
+
+            // Don't handle if this is an MCP OAuth mode load (mode=oauth has no code/state from Google)
+            if (pageParams.get('mode') === 'oauth') return;
 
             // Clean URL
             window.history.replaceState({}, document.title, '/login');
@@ -356,8 +425,8 @@
             }
         });
 
-        // On page load, check for OAuth callback
-        handleOAuthCallback();
+        // On page load, check for Google OAuth callback
+        handleGoogleCallback();
     })();
     </script>
 </body>

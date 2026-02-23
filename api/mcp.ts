@@ -57,6 +57,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = extractApiKey(req);
 
     if (!apiKey) {
+      res.setHeader(
+        'WWW-Authenticate',
+        'Bearer resource_metadata="https://mcp.keywordsai.co/.well-known/oauth-protected-resource"'
+      );
       return res.status(401).json({
         jsonrpc: '2.0',
         error: {

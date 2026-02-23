@@ -3,13 +3,44 @@
   "rewrites": [
     { "source": "/mcp", "destination": "/api/mcp" },
     { "source": "/auth", "destination": "/api/auth" },
-    { "source": "/login", "destination": "/login.html" }
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/.well-known/oauth-protected-resource/mcp", "destination": "/api/well-known/oauth-protected-resource" },
+    { "source": "/.well-known/oauth-protected-resource", "destination": "/api/well-known/oauth-protected-resource" },
+    { "source": "/.well-known/oauth-authorization-server", "destination": "/api/well-known/oauth-authorization-server" },
+    { "source": "/register", "destination": "/api/oauth/register" },
+    { "source": "/authorize", "destination": "/api/oauth/authorize" },
+    { "source": "/oauth/code", "destination": "/api/oauth/code" },
+    { "source": "/token", "destination": "/api/oauth/token" }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/.well-known/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "MCP-Protocol-Version" }
+      ]
+    },
+    {
+      "source": "/register",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, MCP-Protocol-Version" }
+      ]
+    },
+    {
+      "source": "/token",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, MCP-Protocol-Version" }
       ]
     }
   ],
@@ -19,6 +50,24 @@
     },
     "api/auth.ts": {
       "maxDuration": 30
+    },
+    "api/well-known/oauth-protected-resource.ts": {
+      "maxDuration": 10
+    },
+    "api/well-known/oauth-authorization-server.ts": {
+      "maxDuration": 10
+    },
+    "api/oauth/register.ts": {
+      "maxDuration": 10
+    },
+    "api/oauth/authorize.ts": {
+      "maxDuration": 10
+    },
+    "api/oauth/code.ts": {
+      "maxDuration": 10
+    },
+    "api/oauth/token.ts": {
+      "maxDuration": 10
     }
   }
 }
