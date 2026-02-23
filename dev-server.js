@@ -68,13 +68,11 @@ async function handleAuth(req, res) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'code and state are required for google_jwt.' }));
     }
-    const url = `${origin}/auth/o/google-oauth2/`;
-    const formBody = new URLSearchParams({ code, state });
+    const params = new URLSearchParams({ code, state });
+    const url = `${origin}/auth/o/google-oauth2/?${params}`;
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formBody.toString(),
       });
       const data = await response.json();
       res.writeHead(response.status, { 'Content-Type': 'application/json' });
