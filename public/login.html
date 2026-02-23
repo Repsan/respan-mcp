@@ -499,8 +499,18 @@
         const errorEl = $('#error');
         const statusEl = $('#status');
 
-        // --- OAuth mode detection ---
+        // --- Enterprise mode detection ---
         const pageParams = new URLSearchParams(window.location.search);
+        let isEnterprise = pageParams.get('enterprise') === 'true';
+
+        // Persist enterprise flag across redirects (e.g. Google OAuth)
+        if (isEnterprise) {
+            sessionStorage.setItem('enterprise', 'true');
+        } else if (sessionStorage.getItem('enterprise') === 'true') {
+            isEnterprise = true;
+        }
+
+        // --- OAuth mode detection ---
         const oauthMode = pageParams.get('mode') === 'oauth';
         let oauthParams = null;
 
@@ -512,7 +522,7 @@
                 state: pageParams.get('state'),
             };
             $('#page-title').textContent = 'Sign in to authorize';
-            $('#page-subtitle').textContent = 'Keywords AI MCP access';
+            $('#page-subtitle').textContent = isEnterprise ? 'Enterprise MCP access' : 'Keywords AI MCP access';
             $('#page-subtitle').style.display = 'block';
         }
 
@@ -524,10 +534,14 @@
                 if (parsed.client_id && parsed.redirect_uri && parsed.code_challenge && parsed.state) {
                     oauthParams = parsed;
                     $('#page-title').textContent = 'Sign in to authorize';
-                    $('#page-subtitle').textContent = 'Keywords AI MCP access';
+                    $('#page-subtitle').textContent = isEnterprise ? 'Enterprise MCP access' : 'Keywords AI MCP access';
                     $('#page-subtitle').style.display = 'block';
                 }
             } catch {}
+        }
+
+        if (isEnterprise && !oauthMode && !oauthParams) {
+            $('#page-title').textContent = 'Login to Enterprise MCP';
         }
 
         function showError(msg) {
@@ -562,6 +576,7 @@
                 const data = await resp.json();
                 if (data.redirect_url) {
                     sessionStorage.removeItem('oauth_params');
+                    sessionStorage.removeItem('enterprise');
                     window.location.href = data.redirect_url;
                 } else {
                     showError(data.error || 'Failed to generate authorization code.');
@@ -578,14 +593,21 @@
                 return;
             }
 
+            // Clear enterprise flag from sessionStorage after successful login
+            sessionStorage.removeItem('enterprise');
+
             $('#login-section').style.display = 'none';
             $('#token-section').style.display = 'flex';
             $('#access-token').textContent = access;
 
+            const mcpUrl = isEnterprise
+                ? 'https://mcp.keywordsai.co/mcp/enterprise'
+                : 'https://mcp.keywordsai.co/mcp';
+
             const config = JSON.stringify({
                 mcpServers: {
                     "keywords-ai": {
-                        url: "https://mcp.keywordsai.co/mcp",
+                        url: mcpUrl,
                         headers: {
                             Authorization: "Bearer " + access
                         }
@@ -642,6 +664,15 @@
             $('#eye-off-icon').style.display = passwordVisible ? 'block' : 'none';
         });
 
+        // --- Auth headers helper ---
+        function authHeaders() {
+            const h = { 'Content-Type': 'application/json' };
+            if (isEnterprise) {
+                h['keywords-api-base-url'] = 'https://platform.respan.ai/api';
+            }
+            return h;
+        }
+
         // --- Google OAuth: start ---
         $('#google-btn').addEventListener('click', async () => {
             clearMessages();
@@ -656,7 +687,7 @@
                 const redirectUri = window.location.origin + '/login';
                 const resp = await fetch('/auth', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: authHeaders(),
                     body: JSON.stringify({ action: 'google_url', redirect_uri: redirectUri })
                 });
                 const data = await resp.json();
@@ -697,7 +728,7 @@
                 sessionStorage.removeItem('_backend_cookies');
                 const resp = await fetch('/auth', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: authHeaders(),
                     body: JSON.stringify({ action: 'google_jwt', code, state, _backend_cookies: backendCookies })
                 });
                 const data = await resp.json();
@@ -733,7 +764,7 @@
             try {
                 const resp = await fetch('/auth', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: authHeaders(),
                     body: JSON.stringify({ action: 'login', email, password })
                 });
                 const data = await resp.json();

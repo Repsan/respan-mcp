@@ -2,13 +2,17 @@
   "buildCommand": "npm ci && npm run build",
   "rewrites": [
     { "source": "/mcp", "destination": "/api/mcp" },
+    { "source": "/mcp/enterprise", "destination": "/api/mcp/enterprise" },
     { "source": "/auth", "destination": "/api/auth" },
     { "source": "/login", "destination": "/login.html" },
     { "source": "/.well-known/oauth-protected-resource/mcp", "destination": "/api/well-known/oauth-protected-resource" },
+    { "source": "/.well-known/oauth-protected-resource/enterprise", "destination": "/api/well-known/oauth-protected-resource-enterprise" },
     { "source": "/.well-known/oauth-protected-resource", "destination": "/api/well-known/oauth-protected-resource" },
     { "source": "/.well-known/oauth-authorization-server", "destination": "/api/well-known/oauth-authorization-server" },
+    { "source": "/enterprise-oauth/.well-known/oauth-authorization-server", "destination": "/api/well-known/oauth-authorization-server-enterprise" },
     { "source": "/register", "destination": "/api/oauth/register" },
     { "source": "/authorize", "destination": "/api/oauth/authorize" },
+    { "source": "/authorize/enterprise", "destination": "/api/oauth/authorize-enterprise" },
     { "source": "/oauth/code", "destination": "/api/oauth/code" },
     { "source": "/token", "destination": "/api/oauth/token" }
   ],
@@ -48,19 +52,31 @@
     "api/mcp.ts": {
       "maxDuration": 800
     },
+    "api/mcp/enterprise.ts": {
+      "maxDuration": 800
+    },
     "api/auth.ts": {
       "maxDuration": 30
     },
     "api/well-known/oauth-protected-resource.ts": {
       "maxDuration": 10
     },
+    "api/well-known/oauth-protected-resource-enterprise.ts": {
+      "maxDuration": 10
+    },
     "api/well-known/oauth-authorization-server.ts": {
+      "maxDuration": 10
+    },
+    "api/well-known/oauth-authorization-server-enterprise.ts": {
       "maxDuration": 10
     },
     "api/oauth/register.ts": {
       "maxDuration": 10
     },
     "api/oauth/authorize.ts": {
+      "maxDuration": 10
+    },
+    "api/oauth/authorize-enterprise.ts": {
       "maxDuration": 10
     },
     "api/oauth/code.ts": {
