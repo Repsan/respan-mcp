@@ -661,6 +661,10 @@
                 });
                 const data = await resp.json();
                 if (data.authorization_url) {
+                    // Store backend cookies for the token exchange step
+                    if (data._backend_cookies) {
+                        sessionStorage.setItem('_backend_cookies', data._backend_cookies);
+                    }
                     window.location.href = data.authorization_url;
                 } else {
                     showError(data.error || 'Failed to get Google authorization URL.');
@@ -689,16 +693,22 @@
             $('#google-btn').disabled = true;
 
             try {
+                const backendCookies = sessionStorage.getItem('_backend_cookies') || '';
+                sessionStorage.removeItem('_backend_cookies');
                 const resp = await fetch('/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'google_jwt', code, state })
+                    body: JSON.stringify({ action: 'google_jwt', code, state, _backend_cookies: backendCookies })
                 });
                 const data = await resp.json();
                 if (data.access) {
                     showTokens(data.access);
                 } else {
-                    showError(data.detail || data.error || 'Failed to exchange code for token.');
+                    const errMsg = data.detail || data.error
+                        || (data.non_field_errors && data.non_field_errors[0])
+                        || 'Failed to exchange code for token.';
+                    showError(errMsg);
+                    console.error('Google JWT exchange response:', data);
                     $('#google-btn').disabled = false;
                 }
             } catch (err) {

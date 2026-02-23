@@ -32,7 +32,7 @@ async function handleAuth(req, res) {
   let parsed;
   try { parsed = JSON.parse(body); } catch { parsed = {}; }
 
-  const { action, email, password, refresh, redirect_uri, code, state } = parsed;
+  const { action, email, password, refresh, redirect_uri, code, state, _backend_cookies } = parsed;
 
   const validActions = ['login', 'refresh', 'google_url', 'google_jwt'];
   if (!action || !validActions.includes(action)) {
@@ -52,9 +52,11 @@ async function handleAuth(req, res) {
     const url = `${origin}/auth/o/google-oauth2/?redirect_uri=${encodeURIComponent(redirect_uri)}`;
     try {
       const response = await fetch(url, { method: 'GET', redirect: 'manual' });
+      const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
+      const backendCookies = setCookieHeaders.map(c => c.split(';')[0]).join('; ');
       const data = await response.json();
       res.writeHead(response.status, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify(data));
+      return res.end(JSON.stringify({ ...data, _backend_cookies: backendCookies }));
     } catch (error) {
       console.error('Auth proxy error:', error);
       res.writeHead(502, { 'Content-Type': 'application/json' });
@@ -71,9 +73,13 @@ async function handleAuth(req, res) {
     const params = new URLSearchParams({ code, state });
     const url = `${origin}/auth/o/google-oauth2/?${params}`;
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-      });
+      const csrfMatch = (_backend_cookies || '').match(/csrftoken=([^;,\s]+)/);
+      const csrfToken = csrfMatch ? csrfMatch[1] : '';
+      const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+      if (_backend_cookies) headers['Cookie'] = _backend_cookies;
+      if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
+      const response = await fetch(url, { method: 'POST', headers });
       const data = await response.json();
       res.writeHead(response.status, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify(data));
