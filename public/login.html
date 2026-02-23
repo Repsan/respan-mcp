@@ -4,204 +4,492 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Keywords AI MCP - Login</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 58 58'%3E%3Crect width='58' height='58' rx='29' fill='%23151519'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M28.4016 16.2201C28.6068 16.0619 28.8603 15.9646 29.1137 15.9646C29.5 15.9646 29.8621 16.1349 30.0914 16.4391L37.0074 25.3697V32.4996L39.0713 34.568C39.542 35.0426 39.542 35.8213 39.0713 36.2958C38.6006 36.7703 37.8281 36.7703 37.3574 36.2958L34.5934 33.4973V26.2093L28.1844 17.9356V17.9235C27.774 17.4003 27.8705 16.6338 28.4016 16.2201ZM42.7578 35.3992C42.5526 35.3478 42.3581 35.2411 42.1974 35.0791L39.7713 32.6335C39.4937 32.3536 39.373 31.9765 39.4213 31.6236V24.4815H39.3851L32.4329 15.5022C32.2486 15.2672 32.1665 14.983 32.1791 14.7038C31.387 14.5698 30.573 14.5 29.7427 14.5C21.7345 14.5 15.2427 20.9919 15.2427 29C15.2427 37.0081 21.7345 43.5 29.7427 43.5C35.4539 43.5 40.3939 40.1981 42.7578 35.3992Z' fill='%23f9fafc'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --gray1: #151519;
+            --gray2: #1e1e23;
+            --gray3: #2e2e33;
+            --gray4: #b1b3bc;
+            --gray5: #f9fafc;
+            --primary: #6483f0;
+            --primary2: #7590f2;
+            --error: #f55656;
+            --error-bg: rgba(245, 86, 86, 0.1);
+            --success: #73cb98;
+            --success-bg: rgba(115, 203, 152, 0.1);
+            --info-bg: rgba(100, 131, 240, 0.1);
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.7;
-            color: #1a1a1a;
-            background: #fafafa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray1);
+            color: var(--gray5);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
-        .subtitle { color: #666; font-size: 1rem; margin-bottom: 2rem; }
-        .card {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 1rem;
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            min-height: 100vh;
+            padding: 16px 24px;
         }
-        .divider {
+
+        .top-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            align-self: stretch;
+            flex: 1;
+        }
+
+        .back-row {
             display: flex;
             align-items: center;
-            margin: 20px 0;
-            color: #999;
-            font-size: 0.85rem;
+            justify-content: space-between;
+            align-self: stretch;
         }
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #e0e0e0;
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--gray4);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 20px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            transition: color 0.15s, background 0.15s;
         }
-        .divider::before { margin-right: 12px; }
-        .divider::after { margin-left: 12px; }
-        label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: #444;
+
+        .back-link:hover {
+            color: var(--gray5);
+            background: var(--gray2);
         }
-        input[type="email"], input[type="password"] {
+
+        .back-link svg {
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #d0d0d0;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            margin-bottom: 12px;
-            outline: none;
-            transition: border-color 0.2s;
+            max-width: 360px;
+            gap: 24px;
+            margin-top: 120px;
         }
-        input:focus { border-color: #6483F0; }
-        button {
-            display: block;
-            width: 100%;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        button:hover { opacity: 0.85; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-google {
-            background: white;
-            color: #444;
-            border: 1px solid #d0d0d0;
+
+        .logo-wrap {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
         }
-        .btn-google svg { flex-shrink: 0; }
-        .btn-primary { background: #6483F0; color: white; }
-        .error-msg {
-            background: #fef2f2;
-            color: #b91c1c;
-            padding: 10px 12px;
+
+        .logo-wrap svg {
+            flex-shrink: 0;
+        }
+
+        .title-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            align-self: stretch;
+            gap: 4px;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 500;
+            line-height: 28px;
+            color: var(--gray5);
+            text-align: center;
+        }
+
+        .subtitle-text {
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 20px;
+            color: var(--gray4);
+            text-align: center;
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        button, .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 44px;
+            padding: 0 16px;
+            border: none;
             border-radius: 6px;
-            font-size: 0.85rem;
-            margin-bottom: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 20px;
+            cursor: pointer;
+            transition: opacity 0.15s, background 0.15s;
+            gap: 8px;
+        }
+
+        button:hover { opacity: 0.85; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--gray5);
+        }
+
+        .btn-default {
+            background: var(--gray2);
+            color: var(--gray4);
+            box-shadow: inset 0 0 0 1px var(--gray3);
+        }
+
+        .btn-default:hover {
+            background: var(--gray3);
+            opacity: 1;
+        }
+
+        .btn-primary svg, .btn-default svg {
+            flex-shrink: 0;
+        }
+
+        /* Form */
+        .login-form-wrapper {
             display: none;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
         }
-        .status-msg {
-            background: #eff6ff;
-            color: #1e40af;
+
+        .login-form-wrapper.visible {
+            display: flex;
+        }
+
+        .form-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        input[type="email"], input[type="password"], input[type="text"] {
+            width: 100%;
+            height: 40px;
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            box-shadow: inset 0 0 0 1px var(--gray3);
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 20px;
+            color: var(--gray5);
+            outline: none;
+            transition: box-shadow 0.15s;
+        }
+
+        input::placeholder {
+            color: var(--gray4);
+        }
+
+        input:focus {
+            box-shadow: inset 0 0 0 1px var(--gray4);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            width: auto;
+            height: auto;
+            padding: 4px;
+            cursor: pointer;
+            color: var(--gray4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: var(--gray5);
+            opacity: 1;
+        }
+
+        /* Messages */
+        .error-msg {
+            background: var(--error-bg);
+            color: var(--error);
             padding: 10px 12px;
             border-radius: 6px;
-            font-size: 0.85rem;
-            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 18px;
+            display: none;
+            width: 100%;
+        }
+
+        .status-msg {
+            background: var(--info-bg);
+            color: var(--primary2);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 18px;
+            display: none;
+            width: 100%;
+        }
+
+        /* Token section */
+        #token-section {
             display: none;
         }
 
-        /* Token display */
-        #token-section { display: none; }
-        #token-section .card { position: relative; }
+        .token-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .token-block {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .token-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #666;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray4);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 6px;
         }
+
         .token-value {
-            background: #1a1a1a;
-            color: #f0f0f0;
+            background: var(--gray2);
+            color: var(--gray5);
             padding: 12px;
             border-radius: 6px;
-            font-family: 'SF Mono', Monaco, Consolas, monospace;
-            font-size: 0.8rem;
+            font-family: 'SF Mono', 'Fira Code', Monaco, Consolas, monospace;
+            font-size: 12px;
+            line-height: 18px;
             word-break: break-all;
             white-space: pre-wrap;
             max-height: 200px;
             overflow-y: auto;
-            margin-bottom: 8px;
+            box-shadow: inset 0 0 0 1px var(--gray3);
         }
-        .copy-btn {
-            display: inline-block;
-            width: auto;
-            padding: 6px 14px;
-            font-size: 0.8rem;
-            background: #e8e8e8;
-            color: #444;
-            border-radius: 4px;
-        }
-        .copy-btn.copied { background: #d1fae5; color: #065f46; }
-        .token-block { margin-bottom: 16px; }
-        .token-block:last-child { margin-bottom: 0; }
 
-        a { color: #6483F0; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        .links {
-            margin-top: 2rem;
-            text-align: center;
-            font-size: 0.85rem;
-            color: #999;
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            width: auto;
+            height: 32px;
+            padding: 0 12px;
+            font-size: 13px;
+            font-weight: 500;
+            background: var(--gray2);
+            color: var(--gray4);
+            border-radius: 4px;
+            box-shadow: inset 0 0 0 1px var(--gray3);
+            align-self: flex-start;
         }
-        .links a { margin: 0 8px; }
+
+        .copy-btn:hover {
+            color: var(--gray5);
+            opacity: 1;
+        }
+
+        .copy-btn.copied {
+            background: var(--success-bg);
+            color: var(--success);
+            box-shadow: none;
+        }
+
+        /* Footer */
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 16px 0;
+        }
+
+        .footer-link {
+            color: var(--gray4);
+            text-decoration: none;
+            font-size: 12px;
+            line-height: 16px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .footer-link:hover {
+            color: var(--gray5);
+            background: var(--gray2);
+        }
+
+        .footer-separator {
+            color: var(--gray3);
+            font-size: 12px;
+            user-select: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .page-container { padding: 16px 16px; }
+            .main-content { max-width: 100%; margin-top: 60px; }
+        }
     </style>
 </head>
 <body>
     <!-- Login section -->
-    <div id="login-section">
-        <h1>Keywords AI MCP</h1>
-        <p class="subtitle">Sign in to get your MCP access token</p>
+    <div id="login-section" class="page-container">
+        <div class="top-section">
+            <div class="back-row">
+                <a href="https://keywordsai.co/" class="back-link">
+                    <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.7 7.71754C11.8657 7.71754 12 7.58322 12 7.41754V6.50239C12 6.3367 11.8657 6.20238 11.7 6.20238L3.63336 6.20238C3.36608 6.20238 3.23223 5.87924 3.42122 5.69025L6.86363 2.24785C6.98078 2.13069 6.98078 1.94074 6.86363 1.82359L6.21213 1.17209C6.09497 1.05494 5.90503 1.05494 5.78787 1.17209L0.212132 6.74783C0.0949745 6.86499 0.0949745 7.05494 0.212132 7.17209L5.78787 12.7478C5.90503 12.865 6.09497 12.865 6.21213 12.7478L6.86363 12.0963C6.98078 11.9792 6.98078 11.7892 6.86363 11.6721L3.42122 8.22967C3.23223 8.04068 3.36608 7.71754 3.63336 7.71754L11.7 7.71754Z" fill="currentColor"/></svg>
+                    Home
+                </a>
+            </div>
 
-        <div class="card">
-            <div id="status" class="status-msg"></div>
-            <div id="error" class="error-msg"></div>
+            <div class="main-content">
+                <div class="logo-wrap">
+                    <svg width="58" height="58" viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0.5" y="0.5" width="57" height="57" rx="28.5" stroke="#1E1E23"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M28.4016 16.2201C28.6068 16.0619 28.8603 15.9646 29.1137 15.9646C29.5 15.9646 29.8621 16.1349 30.0914 16.4391L37.0074 25.3697V32.4996L39.0713 34.568C39.542 35.0426 39.542 35.8213 39.0713 36.2958C38.6006 36.7703 37.8281 36.7703 37.3574 36.2958L34.5934 33.4973V26.2093L28.1844 17.9356V17.9235C27.774 17.4003 27.8705 16.6338 28.4016 16.2201ZM42.7578 35.3992C42.5526 35.3478 42.3581 35.2411 42.1974 35.0791L39.7713 32.6335C39.4937 32.3536 39.373 31.9765 39.4213 31.6236V24.4815H39.3851L32.4329 15.5022C32.2486 15.2672 32.1665 14.983 32.1791 14.7038C31.387 14.5698 30.573 14.5 29.7427 14.5C21.7345 14.5 15.2427 20.9919 15.2427 29C15.2427 37.0081 21.7345 43.5 29.7427 43.5C35.4539 43.5 40.3939 40.1981 42.7578 35.3992Z" fill="var(--gray5)"/>
+                    </svg>
+                </div>
 
-            <!-- Google OAuth -->
-            <button class="btn-google" id="google-btn" type="button">
-                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.0 24.0 0 0 0 0 21.56l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-                Sign in with Google
-            </button>
+                <div class="title-section">
+                    <div class="title" id="page-title">Login to Keywords AI MCP</div>
+                    <p class="subtitle-text" id="page-subtitle" style="display: none;"></p>
+                </div>
 
-            <div class="divider">or</div>
+                <div id="status" class="status-msg"></div>
+                <div id="error" class="error-msg"></div>
 
-            <!-- Email / Password -->
-            <form id="login-form">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="you@example.com" required>
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Password" required>
-                <button type="submit" class="btn-primary" id="login-btn">Sign in</button>
-            </form>
+                <div class="btn-row" id="auth-buttons">
+                    <!-- Google OAuth -->
+                    <button class="btn-primary" id="google-btn" type="button">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.8601 8.1673C14.8601 7.69454 14.8144 7.20653 14.7381 6.74902H8.13477V9.44832H11.9168C11.7643 10.3176 11.2611 11.0801 10.5138 11.5681L12.7708 13.3219C14.0976 12.0866 14.8601 10.2871 14.8601 8.1673Z" fill="var(--gray5)"/><path d="M8.13542 15C10.0264 15 11.6125 14.3748 12.7715 13.3072L10.5145 11.5687C9.8892 11.9957 9.08093 12.2397 8.13542 12.2397C6.30539 12.2397 4.76511 11.0044 4.20085 9.35742L1.88281 11.1417C3.07233 13.5055 5.48187 15 8.13542 15Z" fill="var(--gray5)"/><path d="M4.20016 9.34197C3.91041 8.47271 3.91041 7.52719 4.20016 6.65793L1.88212 4.8584C0.890855 6.84093 0.890855 9.17422 1.88212 11.1415L4.20016 9.34197Z" fill="var(--gray5)"/><path d="M8.13542 3.77581C9.12668 3.76056 10.1027 4.14182 10.8195 4.82808L12.8172 2.81505C11.5515 1.62553 9.87395 0.985016 8.13542 1.00027C5.48187 1.00027 3.07233 2.49479 1.88281 4.85858L4.20085 6.65811C4.76511 4.99583 6.30539 3.77581 8.13542 3.77581Z" fill="var(--gray5)"/></svg>
+                        Continue with Google
+                    </button>
+
+                    <!-- Email toggle button -->
+                    <button class="btn-default" id="email-toggle-btn" type="button">
+                        Continue with Email
+                    </button>
+                </div>
+
+                <!-- Email / Password form (hidden initially) -->
+                <div class="login-form-wrapper" id="email-form-wrapper">
+                    <form id="login-form">
+                        <div class="form-fields">
+                            <input type="email" id="email" name="email" placeholder="Enter your email address..." required>
+                            <div class="input-wrapper">
+                                <input type="password" id="password" name="password" placeholder="Enter your password..." required>
+                                <button type="button" class="password-toggle" id="password-toggle" tabindex="-1">
+                                    <svg id="eye-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1.33 8s2.67-4.67 6.67-4.67S14.67 8 14.67 8s-2.67 4.67-6.67 4.67S1.33 8 1.33 8z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+                                    <svg id="eye-off-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:none"><path d="M9.41 9.41a2 2 0 1 1-2.83-2.83" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1.33 1.33l13.34 13.34M6.59 3.58A6.2 6.2 0 0 1 8 3.33c4 0 6.67 4.67 6.67 4.67a11.05 11.05 0 0 1-1.31 1.79m-2.18 1.63A6.2 6.2 0 0 1 8 12.67c-4 0-6.67-4.67-6.67-4.67a11.05 11.05 0 0 1 2.63-3.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </div>
+                            <button type="submit" class="btn-primary" id="login-btn">Sign in</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
-        <div class="links">
-            <a href="https://platform.keywordsai.co/platform/signup">Create account</a>
-            <a href="https://docs.keywordsai.co/documentation/resources/mcp">Docs</a>
+        <div class="footer">
+            <a href="https://platform.keywordsai.co/platform/signup" class="footer-link">Create account</a>
+            <span class="footer-separator">&middot;</span>
+            <a href="https://docs.keywordsai.co/documentation/resources/mcp" class="footer-link">Docs</a>
         </div>
     </div>
 
     <!-- Token display section -->
-    <div id="token-section">
-        <h1>You're in!</h1>
-        <p class="subtitle">Copy your access token or the ready-to-paste MCP config below.</p>
-
-        <div class="card">
-            <div class="token-block">
-                <div class="token-label">Access Token</div>
-                <div class="token-value" id="access-token"></div>
-                <button class="copy-btn" data-target="access-token">Copy token</button>
+    <div id="token-section" class="page-container">
+        <div class="top-section">
+            <div class="back-row">
+                <a href="javascript:void(0)" class="back-link" id="logout-link">
+                    <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.7 7.71754C11.8657 7.71754 12 7.58322 12 7.41754V6.50239C12 6.3367 11.8657 6.20238 11.7 6.20238L3.63336 6.20238C3.36608 6.20238 3.23223 5.87924 3.42122 5.69025L6.86363 2.24785C6.98078 2.13069 6.98078 1.94074 6.86363 1.82359L6.21213 1.17209C6.09497 1.05494 5.90503 1.05494 5.78787 1.17209L0.212132 6.74783C0.0949745 6.86499 0.0949745 7.05494 0.212132 7.17209L5.78787 12.7478C5.90503 12.865 6.09497 12.865 6.21213 12.7478L6.86363 12.0963C6.98078 11.9792 6.98078 11.7892 6.86363 11.6721L3.42122 8.22967C3.23223 8.04068 3.36608 7.71754 3.63336 7.71754L11.7 7.71754Z" fill="currentColor"/></svg>
+                    Sign in again
+                </a>
             </div>
 
-            <div class="token-block">
-                <div class="token-label">MCP Client Config (paste into ~/.claude.json or mcp.json)</div>
-                <div class="token-value" id="mcp-config"></div>
-                <button class="copy-btn" data-target="mcp-config">Copy config</button>
+            <div class="main-content">
+                <div class="logo-wrap">
+                    <svg width="58" height="58" viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0.5" y="0.5" width="57" height="57" rx="28.5" stroke="#1E1E23"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M28.4016 16.2201C28.6068 16.0619 28.8603 15.9646 29.1137 15.9646C29.5 15.9646 29.8621 16.1349 30.0914 16.4391L37.0074 25.3697V32.4996L39.0713 34.568C39.542 35.0426 39.542 35.8213 39.0713 36.2958C38.6006 36.7703 37.8281 36.7703 37.3574 36.2958L34.5934 33.4973V26.2093L28.1844 17.9356V17.9235C27.774 17.4003 27.8705 16.6338 28.4016 16.2201ZM42.7578 35.3992C42.5526 35.3478 42.3581 35.2411 42.1974 35.0791L39.7713 32.6335C39.4937 32.3536 39.373 31.9765 39.4213 31.6236V24.4815H39.3851L32.4329 15.5022C32.2486 15.2672 32.1665 14.983 32.1791 14.7038C31.387 14.5698 30.573 14.5 29.7427 14.5C21.7345 14.5 15.2427 20.9919 15.2427 29C15.2427 37.0081 21.7345 43.5 29.7427 43.5C35.4539 43.5 40.3939 40.1981 42.7578 35.3992Z" fill="var(--gray5)"/>
+                    </svg>
+                </div>
+
+                <div class="title-section">
+                    <div class="title">You're in!</div>
+                    <p class="subtitle-text" style="display: block;">Copy your access token or the ready-to-paste MCP config below.</p>
+                </div>
+
+                <div class="token-content">
+                    <div class="token-block">
+                        <div class="token-label">Access Token</div>
+                        <div class="token-value" id="access-token"></div>
+                        <button class="copy-btn" data-target="access-token">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 5.5V3.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2" stroke="currentColor" stroke-width="1.2"/></svg>
+                            Copy token
+                        </button>
+                    </div>
+
+                    <div class="token-block">
+                        <div class="token-label">MCP Client Config</div>
+                        <div class="token-value" id="mcp-config"></div>
+                        <button class="copy-btn" data-target="mcp-config">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 5.5V3.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2" stroke="currentColor" stroke-width="1.2"/></svg>
+                            Copy config
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="links">
-            <a href="javascript:void(0)" id="logout-link">Sign in again</a>
+        <div class="footer">
+            <a href="https://docs.keywordsai.co/documentation/resources/mcp" class="footer-link">Docs</a>
         </div>
     </div>
 
@@ -223,8 +511,9 @@
                 code_challenge: pageParams.get('code_challenge'),
                 state: pageParams.get('state'),
             };
-            // Update subtitle for OAuth mode
-            $('.subtitle').textContent = 'Sign in to authorize Keywords AI MCP access';
+            $('#page-title').textContent = 'Sign in to authorize';
+            $('#page-subtitle').textContent = 'Keywords AI MCP access';
+            $('#page-subtitle').style.display = 'block';
         }
 
         // Restore OAuth params from sessionStorage (after Google redirect)
@@ -234,7 +523,9 @@
                 const parsed = JSON.parse(savedOAuth);
                 if (parsed.client_id && parsed.redirect_uri && parsed.code_challenge && parsed.state) {
                     oauthParams = parsed;
-                    $('.subtitle').textContent = 'Sign in to authorize Keywords AI MCP access';
+                    $('#page-title').textContent = 'Sign in to authorize';
+                    $('#page-subtitle').textContent = 'Keywords AI MCP access';
+                    $('#page-subtitle').style.display = 'block';
                 }
             } catch {}
         }
@@ -288,7 +579,7 @@
             }
 
             $('#login-section').style.display = 'none';
-            $('#token-section').style.display = 'block';
+            $('#token-section').style.display = 'flex';
             $('#access-token').textContent = access;
 
             const config = JSON.stringify({
@@ -311,10 +602,14 @@
             const target = btn.dataset.target;
             const text = document.getElementById(target).textContent;
             navigator.clipboard.writeText(text).then(() => {
-                btn.textContent = 'Copied!';
+                const svgIcon = btn.querySelector('svg');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '';
+                if (svgIcon) btn.appendChild(svgIcon);
+                btn.append(' Copied!');
                 btn.classList.add('copied');
                 setTimeout(() => {
-                    btn.textContent = target === 'access-token' ? 'Copy token' : 'Copy config';
+                    btn.innerHTML = originalHTML;
                     btn.classList.remove('copied');
                 }, 2000);
             });
@@ -323,8 +618,28 @@
         // Logout link
         $('#logout-link').addEventListener('click', () => {
             $('#token-section').style.display = 'none';
-            $('#login-section').style.display = 'block';
+            $('#login-section').style.display = 'flex';
             clearMessages();
+            // Reset email form
+            $('#email-form-wrapper').classList.remove('visible');
+            $('#auth-buttons').style.display = 'flex';
+        });
+
+        // --- Email toggle ---
+        $('#email-toggle-btn').addEventListener('click', () => {
+            $('#email-form-wrapper').classList.add('visible');
+            $('#email-toggle-btn').style.display = 'none';
+            $('#email').focus();
+        });
+
+        // --- Password visibility toggle ---
+        let passwordVisible = false;
+        $('#password-toggle').addEventListener('click', () => {
+            passwordVisible = !passwordVisible;
+            const input = $('#password');
+            input.type = passwordVisible ? 'text' : 'password';
+            $('#eye-icon').style.display = passwordVisible ? 'none' : 'block';
+            $('#eye-off-icon').style.display = passwordVisible ? 'block' : 'none';
         });
 
         // --- Google OAuth: start ---
@@ -364,7 +679,7 @@
             const state = params.get('state');
             if (!code || !state) return;
 
-            // Don't handle if this is an MCP OAuth mode load (mode=oauth has no code/state from Google)
+            // Don't handle if this is an MCP OAuth mode load
             if (pageParams.get('mode') === 'oauth') return;
 
             // Clean URL
