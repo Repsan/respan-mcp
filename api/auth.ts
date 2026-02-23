@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const DEFAULT_BASE_URL = 'https://api.keywordsai.co/api';
+const DEFAULT_BASE_URL = 'https://api.respan.ai/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
