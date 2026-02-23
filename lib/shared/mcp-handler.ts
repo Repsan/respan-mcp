@@ -29,7 +29,7 @@ function extractApiKey(req: VercelRequest): string | undefined {
   return process.env.KEYWORDS_API_KEY;
 }
 
-export function createMcpHandler(defaultBaseUrl: string, resourceMetadataUrl: string) {
+export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: string) {
   return async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
     res.setHeader('CDN-Cache-Control', 'no-store');
@@ -54,6 +54,8 @@ export function createMcpHandler(defaultBaseUrl: string, resourceMetadataUrl: st
       const apiKey = extractApiKey(req);
 
       if (!apiKey) {
+        const host = req.headers.host || 'mcp.keywordsai.co';
+        const resourceMetadataUrl = `https://${host}${resourceMetadataPath}`;
         res.setHeader(
           'WWW-Authenticate',
           `Bearer resource_metadata="${resourceMetadataUrl}"`

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keywords AI MCP - Login</title>
+    <title>Respan MCP - Login</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 58 58'%3E%3Crect width='58' height='58' rx='29' fill='%23151519'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M28.4016 16.2201C28.6068 16.0619 28.8603 15.9646 29.1137 15.9646C29.5 15.9646 29.8621 16.1349 30.0914 16.4391L37.0074 25.3697V32.4996L39.0713 34.568C39.542 35.0426 39.542 35.8213 39.0713 36.2958C38.6006 36.7703 37.8281 36.7703 37.3574 36.2958L34.5934 33.4973V26.2093L28.1844 17.9356V17.9235C27.774 17.4003 27.8705 16.6338 28.4016 16.2201ZM42.7578 35.3992C42.5526 35.3478 42.3581 35.2411 42.1974 35.0791L39.7713 32.6335C39.4937 32.3536 39.373 31.9765 39.4213 31.6236V24.4815H39.3851L32.4329 15.5022C32.2486 15.2672 32.1665 14.983 32.1791 14.7038C31.387 14.5698 30.573 14.5 29.7427 14.5C21.7345 14.5 15.2427 20.9919 15.2427 29C15.2427 37.0081 21.7345 43.5 29.7427 43.5C35.4539 43.5 40.3939 40.1981 42.7578 35.3992Z' fill='%23f9fafc'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -382,7 +382,7 @@
     <div id="login-section" class="page-container">
         <div class="top-section">
             <div class="back-row">
-                <a href="https://keywordsai.co/" class="back-link">
+                <a href="https://respan.ai/" class="back-link">
                     <svg width="12" height="12" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.7 7.71754C11.8657 7.71754 12 7.58322 12 7.41754V6.50239C12 6.3367 11.8657 6.20238 11.7 6.20238L3.63336 6.20238C3.36608 6.20238 3.23223 5.87924 3.42122 5.69025L6.86363 2.24785C6.98078 2.13069 6.98078 1.94074 6.86363 1.82359L6.21213 1.17209C6.09497 1.05494 5.90503 1.05494 5.78787 1.17209L0.212132 6.74783C0.0949745 6.86499 0.0949745 7.05494 0.212132 7.17209L5.78787 12.7478C5.90503 12.865 6.09497 12.865 6.21213 12.7478L6.86363 12.0963C6.98078 11.9792 6.98078 11.7892 6.86363 11.6721L3.42122 8.22967C3.23223 8.04068 3.36608 7.71754 3.63336 7.71754L11.7 7.71754Z" fill="currentColor"/></svg>
                     Home
                 </a>
@@ -397,7 +397,7 @@
                 </div>
 
                 <div class="title-section">
-                    <div class="title" id="page-title">Login to Keywords AI MCP</div>
+                    <div class="title" id="page-title">Login to Respan MCP</div>
                     <p class="subtitle-text" id="page-subtitle" style="display: none;"></p>
                 </div>
 
@@ -437,7 +437,7 @@
         </div>
 
         <div class="footer">
-            <a href="https://platform.keywordsai.co/platform/signup" class="footer-link">Create account</a>
+            <a href="https://platform.respan.ai/platform/signup" class="footer-link">Create account</a>
             <span class="footer-separator">&middot;</span>
             <a href="https://www.respan.ai/docs/documentation/features/mcp/platform-mcp" class="footer-link">Docs</a>
         </div>
@@ -522,7 +522,7 @@
                 state: pageParams.get('state'),
             };
             $('#page-title').textContent = 'Sign in to authorize';
-            $('#page-subtitle').textContent = isEnterprise ? 'Enterprise MCP access' : 'Keywords AI MCP access';
+            $('#page-subtitle').textContent = isEnterprise ? 'Enterprise MCP access' : 'Respan MCP access';
             $('#page-subtitle').style.display = 'block';
         }
 
@@ -534,7 +534,7 @@
                 if (parsed.client_id && parsed.redirect_uri && parsed.code_challenge && parsed.state) {
                     oauthParams = parsed;
                     $('#page-title').textContent = 'Sign in to authorize';
-                    $('#page-subtitle').textContent = isEnterprise ? 'Enterprise MCP access' : 'Keywords AI MCP access';
+                    $('#page-subtitle').textContent = isEnterprise ? 'Enterprise MCP access' : 'Respan MCP access';
                     $('#page-subtitle').style.display = 'block';
                 }
             } catch {}
@@ -601,12 +601,12 @@
             $('#access-token').textContent = access;
 
             const mcpUrl = isEnterprise
-                ? 'https://mcp.keywordsai.co/mcp/enterprise'
-                : 'https://mcp.keywordsai.co/mcp';
+                ? 'https://mcp.respan.ai/mcp/enterprise'
+                : 'https://mcp.respan.ai/mcp';
 
             const config = JSON.stringify({
                 mcpServers: {
-                    "keywords-ai": {
+                    "respan": {
                         url: mcpUrl,
                         headers: {
                             Authorization: "Bearer " + access
@@ -668,7 +668,7 @@
         function authHeaders() {
             const h = { 'Content-Type': 'application/json' };
             if (isEnterprise) {
-                h['keywords-api-base-url'] = 'https://platform.respan.ai/api';
+                h['respan-api-base-url'] = 'https://platform.respan.ai/api';
             }
             return h;
         }

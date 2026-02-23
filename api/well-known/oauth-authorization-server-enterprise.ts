@@ -9,11 +9,14 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
     return res.status(204).end();
   }
 
+  const host = _req.headers.host || 'mcp.keywordsai.co';
+  const origin = `https://${host}`;
+
   return res.status(200).json({
-    issuer: 'https://mcp.keywordsai.co/enterprise-oauth',
-    authorization_endpoint: 'https://mcp.keywordsai.co/authorize/enterprise',
-    token_endpoint: 'https://mcp.keywordsai.co/token',
-    registration_endpoint: 'https://mcp.keywordsai.co/register',
+    issuer: `${origin}/enterprise-oauth`,
+    authorization_endpoint: `${origin}/authorize/enterprise`,
+    token_endpoint: `${origin}/token`,
+    registration_endpoint: `${origin}/register`,
     response_types_supported: ['code'],
     grant_types_supported: ['authorization_code'],
     code_challenge_methods_supported: ['S256'],

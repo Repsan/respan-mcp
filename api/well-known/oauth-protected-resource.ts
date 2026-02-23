@@ -9,8 +9,11 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
     return res.status(204).end();
   }
 
+  const host = _req.headers.host || 'mcp.keywordsai.co';
+  const origin = `https://${host}`;
+
   return res.status(200).json({
-    resource: 'https://mcp.keywordsai.co/mcp',
-    authorization_servers: ['https://mcp.keywordsai.co'],
+    resource: `${origin}/mcp`,
+    authorization_servers: [origin],
   });
 }
