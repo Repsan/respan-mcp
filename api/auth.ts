@@ -43,11 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!code || !state) {
       return res.status(400).json({ error: 'code and state are required for google_jwt.' });
     }
-    const params = new URLSearchParams({ code, state });
-    const url = `${origin}/auth/o/google-oauth2/?${params}`;
+    const url = `${origin}/auth/o/google-oauth2/`;
     try {
       const response = await fetch(url, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ code, state }).toString(),
       });
       const data = await response.json();
       return res.status(response.status).json(data);
