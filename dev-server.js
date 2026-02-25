@@ -9,11 +9,11 @@ import { registerTraceTools } from './dist/lib/observe/traces.js';
 import { registerUserTools } from './dist/lib/observe/users.js';
 import { registerPromptTools } from './dist/lib/develop/prompts.js';
 
-const DEFAULT_BASE_URL = 'https://api.keywordsai.co/api';
+const DEFAULT_BASE_URL = 'https://api.respan.ai/api';
 const PORT = 3001;
 
 function createServer(auth) {
-  const server = new McpServer({ name: 'keywords-ai', version: '1.0.0' });
+  const server = new McpServer({ name: 'respan', version: '1.0.0' });
   registerLogTools(server, auth);
   registerTraceTools(server, auth);
   registerUserTools(server, auth);
@@ -40,7 +40,7 @@ async function handleAuth(req, res) {
     return res.end(JSON.stringify({ error: `Invalid action. Use one of: ${validActions.join(', ')}` }));
   }
 
-  const baseUrl = req.headers['keywords-api-base-url'] || process.env.KEYWORDS_API_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = req.headers['respan-api-base-url'] || process.env.RESPAN_API_BASE_URL || DEFAULT_BASE_URL;
   const origin = baseUrl.replace(/\/api\/?$/, '');
 
   // --- Google OAuth: get authorization URL ---
@@ -165,14 +165,14 @@ const httpServer = http.createServer(async (req, res) => {
 
   // Extract auth from header
   const authHeader = req.headers.authorization;
-  const apiKey = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : process.env.KEYWORDS_API_KEY;
+  const apiKey = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : process.env.RESPAN_API_KEY;
 
   if (!apiKey) {
     res.writeHead(401, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: 'Unauthorized: send Authorization: Bearer YOUR_KEY' }, id: null }));
   }
 
-  const baseUrl = req.headers['keywords-api-base-url'] || process.env.KEYWORDS_API_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = req.headers['respan-api-base-url'] || process.env.RESPAN_API_BASE_URL || DEFAULT_BASE_URL;
   const auth = { apiKey, baseUrl };
 
   try {

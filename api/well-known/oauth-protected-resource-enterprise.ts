@@ -9,7 +9,7 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
     return res.status(204).end();
   }
 
-  const host = _req.headers.host || 'mcp.keywordsai.co';
+  const host = _req.headers.host || 'mcp.respan.ai';
   const origin = `https://${host}`;
 
   return res.status(200).json({

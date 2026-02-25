@@ -9,7 +9,7 @@ import type { AuthConfig } from './client.js';
 
 function createServer(auth: AuthConfig): McpServer {
   const server = new McpServer({
-    name: 'keywords-ai',
+    name: 'respan',
     version: '1.0.0',
   });
 
@@ -26,7 +26,7 @@ function extractApiKey(req: VercelRequest): string | undefined {
   if (authHeader?.startsWith('Bearer ')) {
     return authHeader.slice(7);
   }
-  return process.env.KEYWORDS_API_KEY;
+  return process.env.RESPAN_API_KEY;
 }
 
 export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: string) {
@@ -54,7 +54,7 @@ export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: s
       const apiKey = extractApiKey(req);
 
       if (!apiKey) {
-        const host = req.headers.host || 'mcp.keywordsai.co';
+        const host = req.headers.host || 'mcp.respan.ai';
         const resourceMetadataUrl = `https://${host}${resourceMetadataPath}`;
         res.setHeader(
           'WWW-Authenticate',
@@ -64,14 +64,14 @@ export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: s
           jsonrpc: '2.0',
           error: {
             code: -32001,
-            message: 'Unauthorized: API key required. Use Authorization: Bearer YOUR_KEY header or set KEYWORDS_API_KEY environment variable.',
+            message: 'Unauthorized: API key required. Use Authorization: Bearer YOUR_KEY header or set RESPAN_API_KEY environment variable.',
           },
           id: null,
         });
       }
 
-      const baseUrl = (req.headers['keywords-api-base-url'] as string)
-        || process.env.KEYWORDS_API_BASE_URL
+      const baseUrl = (req.headers['respan-api-base-url'] as string)
+        || process.env.RESPAN_API_BASE_URL
         || defaultBaseUrl;
 
       const auth: AuthConfig = {

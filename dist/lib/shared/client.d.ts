@@ -11,7 +11,7 @@ export declare function validatePathParam(value: string, name: string): string;
  * Resolve auth config from environment variables (used in stdio mode).
  */
 export declare function resolveAuthFromEnv(): AuthConfig;
-export declare function keywordsRequest(endpoint: string, auth: AuthConfig, options?: {
+export declare function respanRequest(endpoint: string, auth: AuthConfig, options?: {
     method?: "GET" | "POST";
     queryParams?: Record<string, any>;
     body?: any;

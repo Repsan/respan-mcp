@@ -1,16 +1,16 @@
 // lib/develop/prompts.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { AuthConfig, keywordsRequest, validatePathParam } from "../shared/client.js";
+import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
 
 export function registerPromptTools(server: McpServer, auth: AuthConfig) {
 
   // 1. List all Prompts
   server.tool(
     "list_prompts",
-    `List all prompts in your Keywords AI organization.
+    `List all prompts in your Respan organization.
 
-Returns a paginated list of all prompts you have created in Keywords AI.
+Returns a paginated list of all prompts you have created in Respan.
 
 RESPONSE FIELDS (per prompt):
 - id: Unique prompt identifier (use this for other prompt operations)
@@ -30,7 +30,7 @@ Use get_prompt_detail to see full prompt content, or list_prompt_versions to see
     },
     async ({ page_size = 50 }) => {
       const limit = Math.min(page_size, 50);
-      const data = await keywordsRequest("prompts/", auth, { queryParams: { page_size: limit } });
+      const data = await respanRequest("prompts/", auth, { queryParams: { page_size: limit } });
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -67,7 +67,7 @@ Use list_prompts first to find the prompt_id.`,
     },
     async ({ prompt_id }) => {
       const safeId = validatePathParam(prompt_id, "prompt_id");
-      const data = await keywordsRequest(`prompts/${safeId}/`, auth);
+      const data = await respanRequest(`prompts/${safeId}/`, auth);
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -101,7 +101,7 @@ Use list_prompts first to find the prompt_id.`,
     },
     async ({ prompt_id }) => {
       const safeId = validatePathParam(prompt_id, "prompt_id");
-      const data = await keywordsRequest(`prompts/${safeId}/versions/`, auth);
+      const data = await respanRequest(`prompts/${safeId}/versions/`, auth);
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -139,7 +139,7 @@ Use list_prompts to find prompt_id, then list_prompt_versions to find the versio
     },
     async ({ prompt_id, version }) => {
       const safePromptId = validatePathParam(prompt_id, "prompt_id");
-      const data = await keywordsRequest(`prompts/${safePromptId}/versions/${version}/`, auth);
+      const data = await respanRequest(`prompts/${safePromptId}/versions/${version}/`, auth);
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );

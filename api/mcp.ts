@@ -1,6 +1,6 @@
 import { createMcpHandler } from '../lib/shared/mcp-handler.js';
 
 export default createMcpHandler(
-  'https://api.keywordsai.co/api',
+  'https://api.respan.ai/api',
   '/.well-known/oauth-protected-resource'
 );

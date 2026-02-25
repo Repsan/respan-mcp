@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { keywordsRequest, validatePathParam } from "../shared/client.js";
+import { respanRequest, validatePathParam } from "../shared/client.js";
 export function registerPromptTools(server, auth) {
     // 1. List all Prompts
-    server.tool("list_prompts", `List all prompts in your Keywords AI organization.
+    server.tool("list_prompts", `List all prompts in your Respan organization.
 
-Returns a paginated list of all prompts you have created in Keywords AI.
+Returns a paginated list of all prompts you have created in Respan.
 
 RESPONSE FIELDS (per prompt):
 - id: Unique prompt identifier (use this for other prompt operations)
@@ -22,7 +22,7 @@ Use get_prompt_detail to see full prompt content, or list_prompt_versions to see
         page_size: z.number().optional().describe("Number of prompts per page (1-50, default 50)")
     }, async ({ page_size = 50 }) => {
         const limit = Math.min(page_size, 50);
-        const data = await keywordsRequest("prompts/", auth, { queryParams: { page_size: limit } });
+        const data = await respanRequest("prompts/", auth, { queryParams: { page_size: limit } });
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     });
     // 2. Get single Prompt details
@@ -53,7 +53,7 @@ Use list_prompts first to find the prompt_id.`, {
         prompt_id: z.string().describe("Unique prompt identifier (from list_prompts)")
     }, async ({ prompt_id }) => {
         const safeId = validatePathParam(prompt_id, "prompt_id");
-        const data = await keywordsRequest(`prompts/${safeId}/`, auth);
+        const data = await respanRequest(`prompts/${safeId}/`, auth);
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     });
     // 3. List versions of a specific Prompt
@@ -81,7 +81,7 @@ Use list_prompts first to find the prompt_id.`, {
         prompt_id: z.string().describe("Unique prompt identifier (from list_prompts)")
     }, async ({ prompt_id }) => {
         const safeId = validatePathParam(prompt_id, "prompt_id");
-        const data = await keywordsRequest(`prompts/${safeId}/versions/`, auth);
+        const data = await respanRequest(`prompts/${safeId}/versions/`, auth);
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     });
     // 4. Get details of a specific Prompt version
@@ -113,7 +113,7 @@ Use list_prompts to find prompt_id, then list_prompt_versions to find the versio
         version: z.number().describe("Version number (integer, e.g. 1, 2, 3 — from the 'version' field in list_prompt_versions)")
     }, async ({ prompt_id, version }) => {
         const safePromptId = validatePathParam(prompt_id, "prompt_id");
-        const data = await keywordsRequest(`prompts/${safePromptId}/versions/${version}/`, auth);
+        const data = await respanRequest(`prompts/${safePromptId}/versions/${version}/`, auth);
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     });
 }

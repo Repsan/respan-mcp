@@ -1,6 +1,6 @@
 // lib/shared/client.ts
 
-const DEFAULT_BASE_URL = "https://api.keywordsai.co/api";
+const DEFAULT_BASE_URL = "https://api.respan.ai/api";
 const REQUEST_TIMEOUT_MS = 180_000;
 
 export interface AuthConfig {
@@ -23,19 +23,19 @@ export function validatePathParam(value: string, name: string): string {
  * Resolve auth config from environment variables (used in stdio mode).
  */
 export function resolveAuthFromEnv(): AuthConfig {
-  const apiKey = process.env.KEYWORDS_API_KEY;
+  const apiKey = process.env.RESPAN_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "Missing API key. Set the KEYWORDS_API_KEY environment variable."
+      "Missing API key. Set the RESPAN_API_KEY environment variable."
     );
   }
   return {
     apiKey,
-    baseUrl: process.env.KEYWORDS_API_BASE_URL || DEFAULT_BASE_URL,
+    baseUrl: process.env.RESPAN_API_BASE_URL || DEFAULT_BASE_URL,
   };
 }
 
-export async function keywordsRequest(
+export async function respanRequest(
   endpoint: string,
   auth: AuthConfig,
   options: {

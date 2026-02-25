@@ -1,7 +1,7 @@
 // lib/observe/logs.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { AuthConfig, keywordsRequest, validatePathParam } from "../shared/client.js";
+import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
 
 export function registerLogTools(server: McpServer, auth: AuthConfig) {
   // --- List Logs ---
@@ -94,7 +94,7 @@ EXAMPLE - find logs for a specific model and customer:
         }
       }
 
-      const data = await keywordsRequest("request-logs/list/", auth, {
+      const data = await respanRequest("request-logs/list/", auth, {
         method: "POST",
         queryParams,
         body: {
@@ -134,7 +134,7 @@ Use list_logs first to find the unique_id, then use this endpoint for full detai
     },
     async ({ log_id }) => {
       const safeId = validatePathParam(log_id, "log_id");
-      const data = await keywordsRequest(`request-logs/${safeId}/`, auth);
+      const data = await respanRequest(`request-logs/${safeId}/`, auth);
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -142,7 +142,7 @@ Use list_logs first to find the unique_id, then use this endpoint for full detai
   // --- Create Log ---
   server.tool(
     "create_log",
-    `Create a new log entry for any type of LLM request using Keywords AI's universal input/output design.
+    `Create a new log entry for any type of LLM request using Respan's universal input/output design.
 
 CORE FIELDS:
 - input: Universal input field (string/object/array) - structure depends on log_type
@@ -258,7 +258,7 @@ Note: Maximum log size is 20MB including all fields.`,
       positive_feedback: z.boolean().optional().describe("User feedback (true = positive)")
     },
     async (params) => {
-      const data = await keywordsRequest("request-logs/", auth, {
+      const data = await respanRequest("request-logs/", auth, {
         method: "POST",
         body: params
       });

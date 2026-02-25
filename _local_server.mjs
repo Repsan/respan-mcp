@@ -6,10 +6,10 @@ import { registerTraceTools } from './dist/lib/observe/traces.js';
 import { registerUserTools } from './dist/lib/observe/users.js';
 import { registerPromptTools } from './dist/lib/develop/prompts.js';
 
-const DEFAULT_BASE_URL = 'https://api.keywordsai.co/api';
+const DEFAULT_BASE_URL = 'https://api.respan.ai/api';
 
 function createServer(auth) {
-  const server = new McpServer({ name: 'keywords-ai', version: '1.0.0' });
+  const server = new McpServer({ name: 'respan', version: '1.0.0' });
   registerLogTools(server, auth);
   registerTraceTools(server, auth);
   registerUserTools(server, auth);
@@ -40,8 +40,8 @@ const httpServer = http.createServer(async (req, res) => {
       return res.status(401).json({ error: 'API key required' });
     }
 
-    const baseUrl = req.headers['keywords-api-base-url'] || DEFAULT_BASE_URL;
-    console.log(`[LOCAL] keywords-api-base-url header: ${req.headers['keywords-api-base-url'] || '(not present)'}`);
+    const baseUrl = req.headers['respan-api-base-url'] || DEFAULT_BASE_URL;
+    console.log(`[LOCAL] respan-api-base-url header: ${req.headers['respan-api-base-url'] || '(not present)'}`);
     console.log(`[LOCAL] Resolved baseUrl: ${baseUrl}`);
 
     const auth = { apiKey, baseUrl };

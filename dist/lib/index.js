@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Entry point for Keywords AI MCP Server (stdio mode)
+// Entry point for Respan MCP Server (stdio mode)
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { resolveAuthFromEnv } from "./shared/client.js";
@@ -10,7 +10,7 @@ import { registerPromptTools } from "./develop/prompts.js";
 async function main() {
     const auth = resolveAuthFromEnv();
     const server = new McpServer({
-        name: "keywords-ai",
+        name: "respan",
         version: "1.0.0",
     });
     registerLogTools(server, auth);
@@ -19,7 +19,7 @@ async function main() {
     registerPromptTools(server, auth);
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error("Keywords AI MCP Server running on stdio");
+    console.error("Respan MCP Server running on stdio");
 }
 main().catch((error) => {
     console.error("Fatal error in main():", error);

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="0; url=https://www.respan.ai/docs/documentation/features/mcp/platform-mcp">
     <link rel="canonical" href="https://www.respan.ai/docs/documentation/features/mcp/platform-mcp">
-    <title>Keywords AI MCP Server - Redirecting...</title>
+    <title>Respan MCP Server - Redirecting...</title>
     <script>window.location.href = "https://www.respan.ai/docs/documentation/features/mcp/platform-mcp";</script>
     <style>
         * {
@@ -99,12 +99,12 @@
     </style>
 </head>
 <body>
-    <h1>Keywords AI MCP Server</h1>
+    <h1>Respan MCP Server</h1>
     <p class="subtitle">Redirecting to documentation...</p>
     <p>If you are not redirected automatically, <a href="https://www.respan.ai/docs/documentation/features/mcp/platform-mcp">click here</a>.</p>
     
     <noscript>
-    <p class="subtitle">Model Context Protocol server for accessing Keywords AI data from your AI assistant</p>
+    <p class="subtitle">Model Context Protocol server for accessing Respan data from your AI assistant</p>
     
     <h2>Features</h2>
     <ul>
@@ -121,10 +121,10 @@
         <p>Use the hosted endpoint where each user provides their own API key:</p>
         <pre><code>{
   "mcpServers": {
-    "keywords-ai": {
-      "url": "https://mcp.keywordsai.co/api/mcp",
+    "respan": {
+      "url": "https://mcp.respan.ai/api/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
+        "Authorization": "Bearer YOUR_RESPAN_API_KEY"
       }
     }
   }
@@ -140,11 +140,11 @@ npm install && npm run build</code></pre>
         <p>Configure your MCP client (<code>~/.cursor/mcp.json</code>):</p>
         <pre><code>{
   "mcpServers": {
-    "keywords-ai": {
+    "respan": {
       "command": "node",
-      "args": ["/path/to/keywordsai-mcp/dist/lib/index.js"],
+      "args": ["/path/to/respan-mcp/dist/lib/index.js"],
       "env": {
-        "KEYWORDS_API_KEY": "your_api_key"
+        "RESPAN_API_KEY": "your_api_key"
       }
     }
   }
@@ -157,12 +157,12 @@ npm install && npm run build</code></pre>
         <ol>
             <li>Clone: <code>git clone <a href="https://github.com/Keywords-AI/keywordsai-mcp">https://github.com/Keywords-AI/keywordsai-mcp</a></code></li>
             <li>Deploy: <code>vercel deploy --prod</code></li>
-            <li>Set <code>KEYWORDS_API_KEY</code> in Vercel Dashboard → Environment Variables</li>
+            <li>Set <code>RESPAN_API_KEY</code> in Vercel Dashboard → Environment Variables</li>
         </ol>
         <p>Configure your MCP client:</p>
         <pre><code>{
   "mcpServers": {
-    "keywords-ai": {
+    "respan": {
       "url": "https://your-project.vercel.app/mcp"
     }
   }
@@ -207,7 +207,7 @@ npm install && npm run build</code></pre>
     <div class="links">
         <a href="https://github.com/Keywords-AI/keywordsai-mcp">GitHub Repository</a>
         <a href="https://www.respan.ai/docs/documentation/features/mcp/platform-mcp">Documentation</a>
-        <a href="https://platform.keywordsai.co/platform/api/api-keys">Get API Key</a>
+        <a href="https://platform.respan.ai/platform/api/api-keys">Get API Key</a>
     </div>
     </noscript>
 </body>

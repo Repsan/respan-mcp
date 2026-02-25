@@ -1,7 +1,7 @@
 // lib/observe/users.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { AuthConfig, keywordsRequest, validatePathParam } from "../shared/client.js";
+import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
 
 export function registerUserTools(server: McpServer, auth: AuthConfig) {
   // --- List Customers ---
@@ -9,7 +9,7 @@ export function registerUserTools(server: McpServer, auth: AuthConfig) {
     "list_customers",
     `List customers/users with pagination and sorting.
 
-Retrieves a paginated list of customers who have made API requests through Keywords AI.
+Retrieves a paginated list of customers who have made API requests through Respan.
 
 QUERY PARAMETERS:
 - page_size: Number of customers per page (max 50 for MCP, API supports up to 1000)
@@ -48,7 +48,7 @@ Use this to identify top users by cost, most active users, or find specific cust
       };
       if (environment) queryParams.environment = environment;
 
-      const data = await keywordsRequest("users/list/", auth, { queryParams });
+      const data = await respanRequest("users/list/", auth, { queryParams });
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -108,7 +108,7 @@ Use list_customers first to find customer_identifier, then use this for full det
       const queryParams: Record<string, any> = {};
       if (environment) queryParams.environment = environment;
 
-      const data = await keywordsRequest(`users/${safeId}/`, auth, { queryParams });
+      const data = await respanRequest(`users/${safeId}/`, auth, { queryParams });
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
   );

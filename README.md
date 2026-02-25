@@ -1,6 +1,6 @@
-# Keywords AI MCP Server
+# Respan MCP Server
 
-Model Context Protocol (MCP) server for [Keywords AI](https://keywordsai.co) - access logs, prompts, traces, and customer data directly from your AI assistant.
+Model Context Protocol (MCP) server for [Respan](https://respan.ai) - access logs, prompts, traces, and customer data directly from your AI assistant.
 
 ## Features
 
@@ -17,7 +17,7 @@ Model Context Protocol (MCP) server for [Keywords AI](https://keywordsai.co) - a
 
 No installation required.
 
-1. Get your API key from [platform.keywordsai.co](https://platform.keywordsai.co/platform/api/api-keys)
+1. Get your API key from [platform.respan.ai](https://platform.respan.ai/platform/api/api-keys)
 
 2. Add to your MCP config file:
 
@@ -25,10 +25,10 @@ No installation required.
 ```json
 {
   "mcpServers": {
-    "keywords-ai": {
-      "url": "https://mcp.keywordsai.co/api/mcp",
+    "respan": {
+      "url": "https://mcp.respan.ai/api/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
+        "Authorization": "Bearer YOUR_RESPAN_API_KEY"
       }
     }
   }
@@ -39,10 +39,10 @@ No installation required.
 ```json
 {
   "mcpServers": {
-    "keywords-ai": {
-      "url": "https://mcp.keywordsai.co/api/mcp",
+    "respan": {
+      "url": "https://mcp.respan.ai/api/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_KEYWORDS_AI_API_KEY"
+        "Authorization": "Bearer YOUR_RESPAN_API_KEY"
       }
     }
   }
@@ -69,11 +69,11 @@ npm run build
 ```json
 {
   "mcpServers": {
-    "keywords-ai": {
+    "respan": {
       "command": "node",
-      "args": ["/absolute/path/to/keywordsai-mcp/dist/lib/index.js"],
+      "args": ["/absolute/path/to/respan-mcp/dist/lib/index.js"],
       "env": {
-        "KEYWORDS_API_KEY": "YOUR_KEYWORDS_AI_API_KEY"
+        "RESPAN_API_KEY": "YOUR_RESPAN_API_KEY"
       }
     }
   }
@@ -86,15 +86,15 @@ npm run build
 
 Deploy your own instance to Vercel for teams sharing a single deployment.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Keywords-AI/keywordsai-mcp&env=KEYWORDS_API_KEY&envDescription=Your%20Keywords%20AI%20API%20key&envLink=https://platform.keywordsai.co/platform/api/api-keys)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Keywords-AI/keywordsai-mcp&env=RESPAN_API_KEY&envDescription=Your%20Respan%20API%20key&envLink=https://platform.respan.ai/platform/api/api-keys)
 
-Set `KEYWORDS_API_KEY` in Vercel Dashboard > Settings > Environment Variables.
+Set `RESPAN_API_KEY` in Vercel Dashboard > Settings > Environment Variables.
 
 Share this config with your team:
 ```json
 {
   "mcpServers": {
-    "keywords-ai": {
+    "respan": {
       "url": "https://your-project.vercel.app/mcp"
     }
   }
@@ -158,7 +158,7 @@ Tools that support filtering accept a `filters` object:
 ## Project Structure
 
 ```
-keywordsai-mcp/
+respan-mcp/
 ├── api/
 │   └── mcp.ts                # HTTP entry point (Vercel serverless function)
 ├── lib/
@@ -187,25 +187,25 @@ keywordsai-mcp/
 
 ## Enterprise Configuration
 
-For custom API endpoints, set the `KEYWORDS_API_BASE_URL` environment variable:
+For custom API endpoints, set the `RESPAN_API_BASE_URL` environment variable:
 
 **Stdio mode:**
 ```json
 {
   "mcpServers": {
-    "keywords-ai": {
+    "respan": {
       "command": "node",
-      "args": ["/path/to/keywordsai-mcp/dist/lib/index.js"],
+      "args": ["/path/to/respan-mcp/dist/lib/index.js"],
       "env": {
-        "KEYWORDS_API_KEY": "YOUR_API_KEY",
-        "KEYWORDS_API_BASE_URL": "https://your-endpoint.example.com/api"
+        "RESPAN_API_KEY": "YOUR_API_KEY",
+        "RESPAN_API_BASE_URL": "https://your-endpoint.example.com/api"
       }
     }
   }
 }
 ```
 
-**Private deployment:** Set `KEYWORDS_API_BASE_URL` in Vercel environment variables.
+**Private deployment:** Set `RESPAN_API_BASE_URL` in Vercel environment variables.
 
 ---
 
@@ -221,7 +221,7 @@ npm run stdio        # Build and run in stdio mode
 
 ## Documentation
 
-Full documentation at [docs.keywordsai.co/documentation/resources/mcp](https://docs.keywordsai.co/documentation/resources/mcp)
+Full documentation at [docs.respan.ai/documentation/resources/mcp](https://docs.respan.ai/documentation/resources/mcp)
 
 ## License
 

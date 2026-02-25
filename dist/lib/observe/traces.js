@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { keywordsRequest, validatePathParam } from "../shared/client.js";
+import { respanRequest, validatePathParam } from "../shared/client.js";
 export function registerTraceTools(server, auth) {
     // --- List Traces ---
     server.tool("list_traces", `List and filter traces with sorting, pagination, and server-side filtering.
@@ -82,7 +82,7 @@ RESPONSE FIELDS:
                 };
             }
         }
-        const data = await keywordsRequest("traces/list/", auth, {
+        const data = await respanRequest("traces/list/", auth, {
             method: "POST",
             queryParams,
             body: { filters: bodyFilters }
@@ -143,7 +143,7 @@ Use list_traces first to find trace_unique_id, then use this for full span tree.
             queryParams.start_time = start_time;
         if (end_time)
             queryParams.end_time = end_time;
-        const data = await keywordsRequest(`traces/${safeId}/`, auth, { queryParams });
+        const data = await respanRequest(`traces/${safeId}/`, auth, { queryParams });
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     });
 }

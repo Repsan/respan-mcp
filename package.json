@@ -1,11 +1,11 @@
 {
-  "name": "keywords-mcp",
+  "name": "respan-mcp",
   "version": "1.0.0",
-  "description": "Keywords AI MCP Server - HTTP streaming and local stdio modes",
+  "description": "Respan MCP Server - HTTP streaming and local stdio modes",
   "main": "dist/lib/index.js",
   "type": "module",
   "bin": {
-    "keywords-mcp": "dist/lib/index.js"
+    "respan-mcp": "dist/lib/index.js"
   },
   "scripts": {
     "build": "tsc",
