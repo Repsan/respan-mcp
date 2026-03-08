@@ -8,6 +8,20 @@ export interface AuthConfig {
   baseUrl: string;
 }
 
+export class RespanApiError extends Error {
+  statusCode: number;
+  endpoint: string;
+  responseBody: unknown;
+
+  constructor(statusCode: number, endpoint: string, responseBody: unknown) {
+    super(`API Error: ${statusCode} - ${JSON.stringify(responseBody)}`);
+    this.name = "RespanApiError";
+    this.statusCode = statusCode;
+    this.endpoint = endpoint;
+    this.responseBody = responseBody;
+  }
+}
+
 /**
  * Validate that a path parameter is safe (alphanumeric, hyphens, underscores, dots, @).
  * Prevents path traversal attacks via user-supplied IDs.
@@ -69,9 +83,18 @@ export async function respanRequest(
   const elapsed = Date.now() - start;
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    console.error(`[MCP] ${method} ${endpoint} -> ${response.status} (${elapsed}ms)`, err);
-    throw new Error(`API Error: ${response.status} - ${JSON.stringify(err)}`);
+    let responseBody: unknown;
+    try {
+      responseBody = await response.json();
+    } catch {
+      try {
+        responseBody = await response.text();
+      } catch {
+        responseBody = "<failed to read response body>";
+      }
+    }
+    console.error(`[MCP] ${method} ${endpoint} -> ${response.status} (${elapsed}ms)`, responseBody);
+    throw new RespanApiError(response.status, endpoint, responseBody);
   }
 
   const data = await response.json();

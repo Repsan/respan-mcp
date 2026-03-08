@@ -4,6 +4,18 @@ import { z } from "zod";
 import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
 import { buildFilterBody } from "../shared/filters.js";
 
+interface ListLogsQueryParams {
+  page_size: number;
+  page: number;
+  sort_by: string;
+  fetch_filters: string;
+  start_time: string;
+  end_time?: string;
+  is_test?: string;
+  all_envs?: string;
+  include_fields: string;
+}
+
 export function registerLogTools(server: McpServer, auth: AuthConfig) {
   // --- List Logs ---
   server.tool(
@@ -61,20 +73,9 @@ EXAMPLE - find logs for a specific model and customer:
     async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters, include_fields }) => {
       const limit = Math.min(page_size, 50);
 
-      const queryParams: Record<string, any> = {
-        page_size: limit,
-        page,
-        sort_by,
-        fetch_filters: "false",
-      };
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const resolvedStart = start_time || oneHourAgo;
-      // Clamp: don't allow start_time older than 1 week
-      queryParams.start_time = new Date(resolvedStart) < oneWeekAgo ? oneWeekAgo.toISOString() : resolvedStart;
-      if (end_time) queryParams.end_time = end_time;
-      if (is_test !== undefined) queryParams.is_test = is_test.toString();
-      if (all_envs !== undefined) queryParams.all_envs = all_envs.toString();
 
       // Default summary fields to keep responses lightweight; use get_log_detail for full data
       const DEFAULT_FIELDS = [
@@ -82,7 +83,19 @@ EXAMPLE - find logs for a specific model and customer:
         "customer_identifier", "prompt_tokens", "completion_tokens", "status",
         "error_message", "log_type", "time_to_first_token", "tokens_per_second"
       ];
-      queryParams.include_fields = (include_fields || DEFAULT_FIELDS).join(",");
+
+      // Clamp: don't allow start_time older than 1 week
+      const queryParams: ListLogsQueryParams = {
+        page_size: limit,
+        page,
+        sort_by,
+        fetch_filters: "false",
+        start_time: new Date(resolvedStart) < oneWeekAgo ? oneWeekAgo.toISOString() : resolvedStart,
+        include_fields: (include_fields || DEFAULT_FIELDS).join(","),
+      };
+      if (end_time) queryParams.end_time = end_time;
+      if (is_test !== undefined) queryParams.is_test = is_test.toString();
+      if (all_envs !== undefined) queryParams.all_envs = all_envs.toString();
 
       const bodyFilters = buildFilterBody(filters ?? []);
 

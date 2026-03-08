@@ -4,6 +4,21 @@ import { z } from "zod";
 import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
 import { buildFilterBody } from "../shared/filters.js";
 
+interface ListTracesQueryParams {
+  page_size: number;
+  page: number;
+  sort_by: string;
+  start_time?: string;
+  end_time?: string;
+  environment?: string;
+}
+
+interface GetTraceQueryParams {
+  environment?: string;
+  start_time?: string;
+  end_time?: string;
+}
+
 export function registerTraceTools(server: McpServer, auth: AuthConfig) {
   // --- List Traces ---
   server.tool(
@@ -74,7 +89,7 @@ RESPONSE FIELDS:
     async ({ page_size = 10, page = 1, sort_by = "-timestamp", start_time, end_time, environment, filters }) => {
       const limit = Math.min(page_size, 20);
 
-      const queryParams: Record<string, any> = { page_size: limit, page, sort_by };
+      const queryParams: ListTracesQueryParams = { page_size: limit, page, sort_by };
       if (start_time) queryParams.start_time = start_time;
       if (end_time) queryParams.end_time = end_time;
       if (environment) queryParams.environment = environment;
@@ -141,7 +156,7 @@ Use list_traces first to find trace_unique_id, then use this for full span tree.
     },
     async ({ trace_id, environment, start_time, end_time }) => {
       const safeId = validatePathParam(trace_id, "trace_id");
-      const queryParams: Record<string, any> = {};
+      const queryParams: GetTraceQueryParams = {};
       if (environment) queryParams.environment = environment;
       if (start_time) queryParams.start_time = start_time;
       if (end_time) queryParams.end_time = end_time;

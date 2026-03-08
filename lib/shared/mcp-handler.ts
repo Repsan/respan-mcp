@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { registerLogTools } from '../observe/logs.js';
 import { registerPromptTools } from '../develop/prompts.js';
@@ -87,8 +88,8 @@ export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: s
       await server.connect(transport);
 
       await transport.handleRequest(
-        req as any,
-        res as any,
+        req as IncomingMessage,
+        res as ServerResponse,
         req.body
       );
     } catch (error) {
