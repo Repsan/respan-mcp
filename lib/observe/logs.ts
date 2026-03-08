@@ -2,6 +2,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
+import { buildFilterBody } from "../shared/filters.js";
 
 export function registerLogTools(server: McpServer, auth: AuthConfig) {
   // --- List Logs ---
@@ -83,16 +84,7 @@ EXAMPLE - find logs for a specific model and customer:
       ];
       queryParams.include_fields = (include_fields || DEFAULT_FIELDS).join(",");
 
-      // Convert filters array to the backend body format: { field: { operator, value } }
-      const bodyFilters: Record<string, any> = {};
-      if (filters) {
-        for (const f of filters) {
-          bodyFilters[f.field] = {
-            value: f.value,
-            operator: f.operator || "",
-          };
-        }
-      }
+      const bodyFilters = buildFilterBody(filters ?? []);
 
       const data = await respanRequest("request-logs/list/", auth, {
         method: "POST",
@@ -252,7 +244,7 @@ Note: Maximum log size is 20MB including all fields.`,
       full_response: z.any().optional().describe("Full response object from provider"),
       prompt_unit_price: z.number().optional().describe("Custom price per 1M prompt tokens"),
       completion_unit_price: z.number().optional().describe("Custom price per 1M completion tokens"),
-      keywordsai_api_controls: z.object({
+      respan_api_controls: z.object({
         block: z.boolean().optional()
       }).optional().describe("API behavior controls"),
       positive_feedback: z.boolean().optional().describe("User feedback (true = positive)")

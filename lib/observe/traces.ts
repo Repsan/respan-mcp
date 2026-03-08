@@ -2,6 +2,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
+import { buildFilterBody } from "../shared/filters.js";
 
 export function registerTraceTools(server: McpServer, auth: AuthConfig) {
   // --- List Traces ---
@@ -78,16 +79,7 @@ RESPONSE FIELDS:
       if (end_time) queryParams.end_time = end_time;
       if (environment) queryParams.environment = environment;
 
-      // Convert filters array to the backend body format: { field: { operator, value } }
-      const bodyFilters: Record<string, any> = {};
-      if (filters) {
-        for (const f of filters) {
-          bodyFilters[f.field] = {
-            value: f.value,
-            operator: f.operator || "",
-          };
-        }
-      }
+      const bodyFilters = buildFilterBody(filters ?? []);
 
       const data = await respanRequest("traces/list/", auth, {
         method: "POST",
