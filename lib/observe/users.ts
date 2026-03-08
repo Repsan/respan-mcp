@@ -3,6 +3,17 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
 
+interface ListCustomersQueryParams {
+  page_size: number;
+  page: number;
+  sort_by: string;
+  environment?: string;
+}
+
+interface GetCustomerQueryParams {
+  environment?: string;
+}
+
 export function registerUserTools(server: McpServer, auth: AuthConfig) {
   // --- List Customers ---
   server.tool(
@@ -41,7 +52,7 @@ Use this to identify top users by cost, most active users, or find specific cust
       environment: z.string().optional().describe("Filter by environment: 'prod' or 'test'")
     },
     async ({ page_size = 20, page = 1, sort_by = "-first_seen", environment }) => {
-      const queryParams: Record<string, any> = {
+      const queryParams: ListCustomersQueryParams = {
         page_size: Math.min(page_size, 50),
         page,
         sort_by
@@ -105,7 +116,7 @@ Use list_customers first to find customer_identifier, then use this for full det
     },
     async ({ customer_identifier, environment }) => {
       const safeId = validatePathParam(customer_identifier, "customer_identifier");
-      const queryParams: Record<string, any> = {};
+      const queryParams: GetCustomerQueryParams = {};
       if (environment) queryParams.environment = environment;
 
       const data = await respanRequest(`users/${safeId}/`, auth, { queryParams });
