@@ -14,8 +14,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: `Invalid action. Use one of: ${validActions.join(', ')}` });
   }
 
-  const baseUrl = (req.headers['keywords-api-base-url'] as string)
-    || process.env.KEYWORDS_API_BASE_URL
+  const baseUrl = (req.headers['respan-api-base-url'] as string)
+    || process.env.RESPAN_API_BASE_URL
     || DEFAULT_BASE_URL;
 
   // Strip trailing /api if present so we can build the auth URL correctly.
