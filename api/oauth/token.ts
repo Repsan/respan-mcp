@@ -78,7 +78,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       access_token: authCode.jwt,
       token_type: 'bearer',
-      expires_in: 3600,
+      expires_in: 86400,
     });
   } catch (err) {
     console.error('Token exchange error:', err);
