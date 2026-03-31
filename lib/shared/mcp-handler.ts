@@ -1,22 +1,28 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { RespanClient } from '@respan/respan-api';
 import { registerLogTools } from '../observe/logs.js';
-import { registerPromptTools } from '../develop/prompts.js';
 import { registerTraceTools } from '../observe/traces.js';
 import { registerUserTools } from '../observe/users.js';
-import type { AuthConfig } from './client.js';
+import { registerPromptTools } from '../develop/prompts.js';
+import { registerExperimentTools } from '../develop/experiments.js';
+import { registerEvaluatorTools } from '../evaluate/evaluators.js';
+import { registerDatasetTools } from '../evaluate/datasets.js';
 
-function createServer(auth: AuthConfig): McpServer {
+function createServer(client: RespanClient | null): McpServer {
   const server = new McpServer({
     name: 'respan',
     version: '1.0.0',
   });
 
-  registerLogTools(server, auth);
-  registerTraceTools(server, auth);
-  registerUserTools(server, auth);
-  registerPromptTools(server, auth);
+  registerLogTools(server, client);
+  registerTraceTools(server, client);
+  registerUserTools(server, client);
+  registerPromptTools(server, client);
+  registerExperimentTools(server, client);
+  registerEvaluatorTools(server, client);
+  registerDatasetTools(server, client);
 
   return server;
 }
@@ -74,12 +80,12 @@ export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: s
         || process.env.RESPAN_API_BASE_URL
         || defaultBaseUrl;
 
-      const auth: AuthConfig = {
-        apiKey,
-        baseUrl,
-      };
+      const client = new RespanClient({
+        token: apiKey,
+        ...(baseUrl !== defaultBaseUrl ? { environment: baseUrl } : {}),
+      });
 
-      const server = createServer(auth);
+      const server = createServer(client);
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
       });

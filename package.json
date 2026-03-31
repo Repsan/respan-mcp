@@ -1,29 +1,44 @@
 {
   "name": "respan-mcp",
   "version": "1.0.0",
-  "description": "Respan MCP Server - HTTP streaming and local stdio modes",
-  "main": "dist/lib/index.js",
   "type": "module",
+  "main": "dist/lib/index.js",
   "bin": {
     "respan-mcp": "dist/lib/index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch",
-    "stdio": "npm run build && node dist/lib/index.js",
+    "build": "tsc && vite build",
+    "build:server": "tsc",
+    "dev": "vite",
+    "stdio": "npm run build:server && node dist/lib/index.js",
     "start": "node dist/lib/index.js",
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.48",
     "@modelcontextprotocol/sdk": "^1.25.1",
-    "zod": "^4.3.4"
+    "@respan/instrumentation-vercel": "^1.0.1",
+    "@respan/respan": "^2.0.1",
+    "@respan/respan-api": "^0.0.3",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^6.0.1",
+    "ai": "^6.0.141",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.1",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
+    "tailwindcss": "^4.2.2",
+    "vite": "^8.0.3",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vercel/node": "^5.5.16",
     "typescript": "^5.3.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }

@@ -1,9 +1,10 @@
 // lib/observe/traces.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
+import { RespanClient } from "@respan/respan-api";
+import { requireClient } from "../shared/client.js";
 
-export function registerTraceTools(server: McpServer, auth: AuthConfig) {
+export function registerTraceTools(server: McpServer, client: RespanClient | null) {
   // --- List Traces ---
   server.tool(
     "list_traces",
@@ -71,12 +72,8 @@ RESPONSE FIELDS:
       })).optional().describe("Array of server-side filters. Each filter has field, operator, and value. Example: [{\"field\": \"error_count\", \"operator\": \"gt\", \"value\": [0]}]")
     },
     async ({ page_size = 10, page = 1, sort_by = "-timestamp", start_time, end_time, environment, filters }) => {
+      const c = requireClient(client);
       const limit = Math.min(page_size, 20);
-
-      const queryParams: Record<string, any> = { page_size: limit, page, sort_by };
-      if (start_time) queryParams.start_time = start_time;
-      if (end_time) queryParams.end_time = end_time;
-      if (environment) queryParams.environment = environment;
 
       // Convert filters array to the backend body format: { field: { operator, value } }
       const bodyFilters: Record<string, any> = {};
@@ -89,12 +86,21 @@ RESPONSE FIELDS:
         }
       }
 
-      const data = await respanRequest("traces/list/", auth, {
-        method: "POST",
-        queryParams,
-        body: { filters: bodyFilters }
-      });
-      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      const queryParams: Record<string, any> = {
+        page_size: limit,
+        page,
+        sort_by,
+      };
+      if (start_time) queryParams.start_time = start_time;
+      if (end_time) queryParams.end_time = end_time;
+      if (environment) queryParams.environment = environment;
+
+      const data = await c.traces.list(
+        { filters: bodyFilters },
+        { queryParams }
+      );
+
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
 
@@ -148,14 +154,64 @@ Use list_traces first to find trace_unique_id, then use this for full span tree.
       end_time: z.string().optional().describe("End time filter in ISO 8601 format")
     },
     async ({ trace_id, environment, start_time, end_time }) => {
-      const safeId = validatePathParam(trace_id, "trace_id");
+      const c = requireClient(client);
       const queryParams: Record<string, any> = {};
       if (environment) queryParams.environment = environment;
       if (start_time) queryParams.start_time = start_time;
       if (end_time) queryParams.end_time = end_time;
 
-      const data = await respanRequest(`traces/${safeId}/`, auth, { queryParams });
-      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      const data = await c.traces.retrieveTrace(
+        { trace_unique_id: trace_id },
+        { queryParams }
+      );
+
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  // --- Get Traces Summary ---
+  server.tool(
+    "get_traces_summary",
+    `Retrieve aggregated summary statistics for traces. Returns total_count, total_cost, total_tokens, avg_latency.
+
+Useful for getting quick insights into trace-level metrics without fetching all individual traces.
+
+PARAMETERS:
+- start_time: Start time in ISO 8601 format (required)
+- end_time: End time in ISO 8601 format (required)
+
+RESPONSE FIELDS:
+- total_count: Total number of traces matching filters
+- total_cost: Total cost in USD
+- total_prompt_tokens, total_completion_tokens, total_tokens: Aggregate token usage
+- average_cost, average_tokens: Per-trace averages
+- total_duration, average_duration: Duration metrics
+- total_span_count, average_span_count: Span count metrics
+- total_llm_call_count, average_llm_call_count: LLM call metrics
+- total_error_count, error_rate: Error metrics
+
+EXAMPLE:
+{
+  "start_time": "2025-01-01T00:00:00Z",
+  "end_time": "2025-01-31T23:59:59Z"
+}`,
+    {
+      start_time: z.string().describe("Start time in ISO 8601 format"),
+      end_time: z.string().describe("End time in ISO 8601 format")
+    },
+    async ({ start_time, end_time }) => {
+      const c = requireClient(client);
+      const data = await c.traces.retrieveTracesSummary(
+        {},
+        {
+          queryParams: {
+            start_time,
+            end_time,
+          },
+        }
+      );
+
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
 }

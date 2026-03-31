@@ -1,9 +1,10 @@
 // lib/observe/logs.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
+import { RespanClient } from "@respan/respan-api";
+import { requireClient } from "../shared/client.js";
 
-export function registerLogTools(server: McpServer, auth: AuthConfig) {
+export function registerLogTools(server: McpServer, client: RespanClient | null) {
   // --- List Logs ---
   server.tool(
     "list_logs",
@@ -58,22 +59,13 @@ EXAMPLE - find logs for a specific model and customer:
       include_fields: z.array(z.string()).optional().describe("Fields to include in response. Defaults to summary fields (unique_id, model, cost, status_code, latency, timestamp, customer_identifier, prompt_tokens, completion_tokens, status, error_message, log_type). Use get_log_detail for full log data.")
     },
     async ({ page_size = 20, page = 1, sort_by = "-id", start_time, end_time, is_test, all_envs, filters, include_fields }) => {
+      const c = requireClient(client);
       const limit = Math.min(page_size, 50);
 
-      const queryParams: Record<string, any> = {
-        page_size: limit,
-        page,
-        sort_by,
-        fetch_filters: "false",
-      };
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const resolvedStart = start_time || oneHourAgo;
-      // Clamp: don't allow start_time older than 1 week
-      queryParams.start_time = new Date(resolvedStart) < oneWeekAgo ? oneWeekAgo.toISOString() : resolvedStart;
-      if (end_time) queryParams.end_time = end_time;
-      if (is_test !== undefined) queryParams.is_test = is_test.toString();
-      if (all_envs !== undefined) queryParams.all_envs = all_envs.toString();
+      const clampedStart = new Date(resolvedStart) < oneWeekAgo ? oneWeekAgo.toISOString() : resolvedStart;
 
       // Default summary fields to keep responses lightweight; use get_log_detail for full data
       const DEFAULT_FIELDS = [
@@ -81,7 +73,7 @@ EXAMPLE - find logs for a specific model and customer:
         "customer_identifier", "prompt_tokens", "completion_tokens", "status",
         "error_message", "log_type", "time_to_first_token", "tokens_per_second"
       ];
-      queryParams.include_fields = (include_fields || DEFAULT_FIELDS).join(",");
+      const fieldsStr = (include_fields || DEFAULT_FIELDS).join(",");
 
       // Convert filters array to the backend body format: { field: { operator, value } }
       const bodyFilters: Record<string, any> = {};
@@ -94,16 +86,21 @@ EXAMPLE - find logs for a specific model and customer:
         }
       }
 
-      const data = await respanRequest("request-logs/list/", auth, {
-        method: "POST",
-        queryParams,
-        body: {
-          filters: bodyFilters,
-          exporting: false,
-        },
+      const data = await c.logs.listSpans({
+        start_time: clampedStart,
+        end_time: end_time || new Date().toISOString(),
+        sort_by,
+        operator: "",
+        page_size: limit,
+        page,
+        is_test: is_test !== undefined ? String(is_test) : undefined,
+        all_envs: all_envs !== undefined ? String(all_envs) : undefined,
+        fetch_filters: "false",
+        include_fields: fieldsStr,
+        filters: Object.keys(bodyFilters).length > 0 ? bodyFilters : undefined,
       });
 
-      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
 
@@ -133,9 +130,9 @@ Use list_logs first to find the unique_id, then use this endpoint for full detai
       log_id: z.string().describe("Unique identifier of the log (unique_id field from list_logs)")
     },
     async ({ log_id }) => {
-      const safeId = validatePathParam(log_id, "log_id");
-      const data = await respanRequest(`request-logs/${safeId}/`, auth);
-      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      const c = requireClient(client);
+      const data = await c.logs.retrieveSpan({ unique_id: log_id });
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
 
@@ -258,11 +255,54 @@ Note: Maximum log size is 20MB including all fields.`,
       positive_feedback: z.boolean().optional().describe("User feedback (true = positive)")
     },
     async (params) => {
-      const data = await respanRequest("request-logs/", auth, {
-        method: "POST",
-        body: params
+      const c = requireClient(client);
+      const data = await c.logs.createSpan(params as any);
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  // --- Get Spans Summary ---
+  server.tool(
+    "get_spans_summary",
+    `Retrieve aggregated summary statistics for log spans. Returns total_count, total_cost, total_tokens, avg_latency etc.
+
+Useful for getting quick insights into your LLM usage without fetching all individual spans.
+
+PARAMETERS:
+- start_time: Start time in ISO 8601 format (required)
+- end_time: End time in ISO 8601 format (required)
+- filters: Optional object of server-side filters in backend format: { field_name: { operator, value } }
+
+RESPONSE FIELDS:
+- total_cost: Total cost in USD for all filtered spans
+- total_tokens: Total tokens (prompt + completion)
+- number_of_requests: Total number of requests matching filters
+- scores: Aggregated score summaries grouped by evaluator_id
+
+EXAMPLE:
+{
+  "start_time": "2025-01-01T00:00:00Z",
+  "end_time": "2025-01-31T23:59:59Z",
+  "filters": {
+    "model": { "operator": "", "value": ["gpt-4o"] }
+  }
+}`,
+    {
+      start_time: z.string().describe("Start time in ISO 8601 format"),
+      end_time: z.string().describe("End time in ISO 8601 format"),
+      filters: z.record(z.string(), z.object({
+        operator: z.string().describe("Filter operator: '' (exact match), 'not', 'lt', 'lte', 'gt', 'gte', 'icontains', 'in', 'isnull'"),
+        value: z.array(z.any()).describe("Filter value(s) as array")
+      })).optional().describe("Server-side filters in backend format. Example: { \"model\": { \"operator\": \"\", \"value\": [\"gpt-4o\"] } }")
+    },
+    async ({ start_time, end_time, filters }) => {
+      const c = requireClient(client);
+      const data = await c.logs.getSpansSummary({
+        start_time,
+        end_time,
+        ...(filters ? { filters } : {}),
       });
-      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
 }

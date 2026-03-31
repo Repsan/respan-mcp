@@ -1,81 +1,88 @@
-// lib/shared/client.ts
-
-const DEFAULT_BASE_URL = "https://api.respan.ai/api";
-const REQUEST_TIMEOUT_MS = 180_000;
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { RespanClient } from '@respan/respan-api';
 
 export interface AuthConfig {
-  apiKey: string;
-  baseUrl: string;
+  token: string;
+  baseUrl?: string;
+}
+
+export function createClient(auth: AuthConfig): RespanClient {
+  return new RespanClient({
+    token: auth.token,
+    ...(auth.baseUrl ? { environment: auth.baseUrl } : {}),
+  });
 }
 
 /**
- * Validate that a path parameter is safe (alphanumeric, hyphens, underscores, dots, @).
- * Prevents path traversal attacks via user-supplied IDs.
+ * Read credentials from ~/.respan/credentials.json (written by `respan login`).
+ * Returns the active profile's token and baseUrl, or null if not available.
  */
-export function validatePathParam(value: string, name: string): string {
-  if (!/^[\w.@-]+$/.test(value)) {
-    throw new Error(`Invalid ${name}: contains disallowed characters`);
+function resolveAuthFromCredentialFile(): AuthConfig | null {
+  try {
+    const configDir = join(homedir(), '.respan');
+
+    // Read active profile from config.json
+    let activeProfile = 'default';
+    try {
+      const configRaw = readFileSync(join(configDir, 'config.json'), 'utf-8');
+      const config = JSON.parse(configRaw);
+      if (config.activeProfile) {
+        activeProfile = config.activeProfile;
+      }
+    } catch {
+      // No config file or invalid — use default profile
+    }
+
+    // Read credentials.json
+    const credsRaw = readFileSync(join(configDir, 'credentials.json'), 'utf-8');
+    const creds = JSON.parse(credsRaw);
+    const credential = creds[activeProfile];
+    if (!credential) return null;
+
+    // Support both api_key and jwt credential types
+    let token: string | undefined;
+    if (credential.type === 'api_key' && credential.apiKey) {
+      token = credential.apiKey;
+    } else if (credential.type === 'jwt' && credential.accessToken) {
+      token = credential.accessToken;
+    }
+
+    if (!token) return null;
+
+    return {
+      token,
+      baseUrl: credential.baseUrl || undefined,
+    };
+  } catch {
+    return null;
   }
-  return value;
 }
 
 /**
- * Resolve auth config from environment variables (used in stdio mode).
+ * Resolve auth from environment variables or credential file.
+ * Priority: env var > credential file
  */
-export function resolveAuthFromEnv(): AuthConfig {
-  const apiKey = process.env.RESPAN_API_KEY;
-  if (!apiKey) {
+export function resolveAuthFromEnv(): AuthConfig | null {
+  // 1. Environment variable (highest priority)
+  const envToken = process.env.RESPAN_API_KEY;
+  if (envToken) {
+    return {
+      token: envToken,
+      baseUrl: process.env.RESPAN_API_BASE_URL || undefined,
+    };
+  }
+
+  // 2. Credential file (~/.respan/credentials.json, written by `respan login`)
+  return resolveAuthFromCredentialFile();
+}
+
+export function requireClient(client: RespanClient | null): RespanClient {
+  if (!client) {
     throw new Error(
-      "Missing API key. Set the RESPAN_API_KEY environment variable."
+      'This tool requires authentication. Set RESPAN_API_KEY or run `respan login` to authenticate.'
     );
   }
-  return {
-    apiKey,
-    baseUrl: process.env.RESPAN_API_BASE_URL || DEFAULT_BASE_URL,
-  };
-}
-
-export async function respanRequest(
-  endpoint: string,
-  auth: AuthConfig,
-  options: {
-    method?: "GET" | "POST";
-    queryParams?: Record<string, any>;
-    body?: any;
-  } = {}
-) {
-  const { method = "GET", queryParams = {}, body } = options;
-
-  const filteredParams = Object.fromEntries(
-    Object.entries(queryParams).filter(([_, v]) => v !== undefined)
-  );
-
-  const queryString = new URLSearchParams(filteredParams).toString();
-  const url = `${auth.baseUrl}/${endpoint}${queryString ? `?${queryString}` : ""}`;
-
-  console.log(`[MCP] ${method} ${url}`);
-
-  const start = Date.now();
-  const response = await fetch(url, {
-    method,
-    headers: {
-      "Authorization": `Bearer ${auth.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
-
-  const elapsed = Date.now() - start;
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    console.error(`[MCP] ${method} ${endpoint} -> ${response.status} (${elapsed}ms)`, err);
-    throw new Error(`API Error: ${response.status} - ${JSON.stringify(err)}`);
-  }
-
-  const data = await response.json();
-  const summary = Array.isArray(data) ? `array[${data.length}]` : typeof data === 'object' ? `object` : typeof data;
-  console.log(`[MCP] ${method} ${endpoint} -> ${response.status} (${elapsed}ms) ${summary}`);
-  return data;
+  return client;
 }

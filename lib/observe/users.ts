@@ -1,9 +1,10 @@
 // lib/observe/users.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { AuthConfig, respanRequest, validatePathParam } from "../shared/client.js";
+import { RespanClient } from "@respan/respan-api";
+import { requireClient } from "../shared/client.js";
 
-export function registerUserTools(server: McpServer, auth: AuthConfig) {
+export function registerUserTools(server: McpServer, client: RespanClient | null) {
   // --- List Customers ---
   server.tool(
     "list_customers",
@@ -41,15 +42,15 @@ Use this to identify top users by cost, most active users, or find specific cust
       environment: z.string().optional().describe("Filter by environment: 'prod' or 'test'")
     },
     async ({ page_size = 20, page = 1, sort_by = "-first_seen", environment }) => {
-      const queryParams: Record<string, any> = {
+      const c = requireClient(client);
+      const data = await c.users.list({
         page_size: Math.min(page_size, 50),
         page,
-        sort_by
-      };
-      if (environment) queryParams.environment = environment;
+        sort_by,
+        ...(environment ? { environment } : {}),
+      });
 
-      const data = await respanRequest("users/list/", auth, { queryParams });
-      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
 
@@ -104,12 +105,13 @@ Use list_customers first to find customer_identifier, then use this for full det
       environment: z.string().optional().describe("Environment: 'prod' or 'test' (default: 'prod')")
     },
     async ({ customer_identifier, environment }) => {
-      const safeId = validatePathParam(customer_identifier, "customer_identifier");
-      const queryParams: Record<string, any> = {};
-      if (environment) queryParams.environment = environment;
+      const c = requireClient(client);
+      const data = await c.users.retrieveUser({
+        customer_identifier,
+        ...(environment ? { environment } : {}),
+      });
 
-      const data = await respanRequest(`users/${safeId}/`, auth, { queryParams });
-      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
 }
