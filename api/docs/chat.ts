@@ -71,7 +71,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ];
 
     if (Array.isArray(chatHistory)) {
-      for (const msg of chatHistory.slice(-6)) {
+      // chatHistory from frontend already includes the current query as the
+      // last user message — add only prior context here (we append query below).
+      const history = chatHistory.slice(-6);
+      const last = history[history.length - 1];
+      const trailing = last?.role === 'user' ? history.slice(0, -1) : history;
+      for (const msg of trailing) {
         if (msg.role && msg.content) messages.push({ role: msg.role, content: msg.content });
       }
     }
