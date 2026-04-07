@@ -13,7 +13,7 @@ import { registerDatasetTools } from "./evaluate/datasets.js";
 
 async function main() {
   const auth = resolveAuthFromEnv();
-  const client = auth ? createClient(auth) : null;
+  const client = auth ? createClient(auth, auth.baseUrl) : null;
 
   if (!auth) {
     console.error("No credentials found. Set RESPAN_API_KEY or run `respan login` to authenticate.");

@@ -1,10 +1,10 @@
 // lib/observe/logs.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { RespanClient } from "@respan/respan-api";
+import type { AuthenticatedClient } from "../shared/client.js";
 import { requireClient } from "../shared/client.js";
 
-export function registerLogTools(server: McpServer, client: RespanClient | null) {
+export function registerLogTools(server: McpServer, client: AuthenticatedClient | null) {
   // --- List Logs ---
   server.tool(
     "list_logs",
@@ -86,16 +86,17 @@ EXAMPLE - find logs for a specific model and customer:
         }
       }
 
-      const data = await c.logs.listSpans({
+      const data = await c.client.spans.listSpans({
+        Authorization: c.auth,
+        operator: "AND",
         start_time: clampedStart,
         end_time: end_time || new Date().toISOString(),
         sort_by,
-        operator: "",
         page_size: limit,
         page,
-        is_test: is_test !== undefined ? String(is_test) : undefined,
-        all_envs: all_envs !== undefined ? String(all_envs) : undefined,
-        fetch_filters: "false",
+        is_test: is_test !== undefined ? String(is_test) as any : undefined,
+        all_envs: all_envs !== undefined ? String(all_envs) as any : undefined,
+        fetch_filters: "false" as any,
         include_fields: fieldsStr,
         filters: Object.keys(bodyFilters).length > 0 ? bodyFilters : undefined,
       });
@@ -131,7 +132,7 @@ Use list_logs first to find the unique_id, then use this endpoint for full detai
     },
     async ({ log_id }) => {
       const c = requireClient(client);
-      const data = await c.logs.retrieveSpan({ unique_id: log_id });
+      const data = await c.client.spans.retrieveSpan({ Authorization: c.auth, unique_id: log_id });
       return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -256,7 +257,7 @@ Note: Maximum log size is 20MB including all fields.`,
     },
     async (params) => {
       const c = requireClient(client);
-      const data = await c.logs.createSpan(params as any);
+      const data = await c.client.spans.createSpan({ Authorization: c.auth, ...params } as any);
       return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
   );
@@ -297,7 +298,8 @@ EXAMPLE:
     },
     async ({ start_time, end_time, filters }) => {
       const c = requireClient(client);
-      const data = await c.logs.getSpansSummary({
+      const data = await c.client.spans.getSpansSummary({
+        Authorization: c.auth,
         start_time,
         end_time,
         ...(filters ? { filters } : {}),

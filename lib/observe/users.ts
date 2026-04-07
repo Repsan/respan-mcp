@@ -1,10 +1,10 @@
 // lib/observe/users.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { RespanClient } from "@respan/respan-api";
+import type { AuthenticatedClient } from "../shared/client.js";
 import { requireClient } from "../shared/client.js";
 
-export function registerUserTools(server: McpServer, client: RespanClient | null) {
+export function registerUserTools(server: McpServer, client: AuthenticatedClient | null) {
   // --- List Customers ---
   server.tool(
     "list_customers",
@@ -43,7 +43,8 @@ Use this to identify top users by cost, most active users, or find specific cust
     },
     async ({ page_size = 20, page = 1, sort_by = "-first_seen", environment }) => {
       const c = requireClient(client);
-      const data = await c.users.list({
+      const data = await c.client.users.listCustomers({
+        Authorization: c.auth,
         page_size: Math.min(page_size, 50),
         page,
         sort_by,
@@ -106,7 +107,8 @@ Use list_customers first to find customer_identifier, then use this for full det
     },
     async ({ customer_identifier, environment }) => {
       const c = requireClient(client);
-      const data = await c.users.retrieveUser({
+      const data = await c.client.users.retrieveUser({
+        Authorization: c.auth,
         customer_identifier,
         ...(environment ? { environment } : {}),
       });

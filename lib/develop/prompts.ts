@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { RespanClient } from "@respan/respan-api";
+import type { AuthenticatedClient } from "../shared/client.js";
 import { requireClient } from "../shared/client.js";
 
-export function registerPromptTools(server: McpServer, client: RespanClient | null) {
+export function registerPromptTools(server: McpServer, client: AuthenticatedClient | null) {
   // 1. List all Prompts
   server.tool(
     "list_prompts",
@@ -32,7 +32,7 @@ Use get_prompt_detail to see full prompt content, or list_prompt_versions to see
     },
     async () => {
       const c = requireClient(client);
-      const data = await c.prompts.retrievePrompts();
+      const data = await c.client.prompts.listPrompts({ Authorization: c.auth });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -71,8 +71,7 @@ Use list_prompts first to find the prompt_id.`,
     },
     async ({ prompt_id }) => {
       const c = requireClient(client);
-      // SDK doesn't have a single-prompt retrieval; use retrievePrompts and filter
-      const data = await (c.prompts as any).retrievePrompts({ prompt_id });
+      const data = await c.client.prompts.retrievePrompt({ Authorization: c.auth, prompt_id });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -108,7 +107,7 @@ Use list_prompts first to find the prompt_id.`,
     },
     async ({ prompt_id }) => {
       const c = requireClient(client);
-      const data = await c.prompts.retrieveVersions({ prompt_id });
+      const data = await c.client.prompts.listPromptVersions({ Authorization: c.auth, prompt_id });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -152,8 +151,11 @@ Use list_prompts to find prompt_id, then list_prompt_versions to find the versio
     },
     async ({ prompt_id, version }) => {
       const c = requireClient(client);
-      // SDK retrieveVersions handles both list and single retrieval via path
-      const data = await (c.prompts as any).retrieveVersions({ prompt_id, version: String(version) });
+      const data = await c.client.prompts.retrievePromptVersion({
+        Authorization: c.auth,
+        prompt_id,
+        version: String(version),
+      });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -173,7 +175,8 @@ Use list_prompts to find prompt_id, then list_prompt_versions to find the versio
     },
     async ({ name, description }) => {
       const c = requireClient(client);
-      const data = await c.prompts.createPrompt({
+      const data = await c.client.prompts.createPrompt({
+        Authorization: c.auth,
         name,
         ...(description !== undefined ? { description } : {}),
       });
@@ -197,12 +200,11 @@ Use list_prompts to find prompt_id, then list_prompt_versions to find the versio
     },
     async ({ prompt_id, name, description }) => {
       const c = requireClient(client);
-      const updateBody: Record<string, unknown> = {};
-      if (name !== undefined) updateBody.name = name;
-      if (description !== undefined) updateBody.description = description;
-      const data = await c.prompts.updatePrompt({
+      const data = await c.client.prompts.updatePrompt({
+        Authorization: c.auth,
         prompt_id,
-        body: updateBody,
+        ...(name !== undefined ? { name } : {}),
+        ...(description !== undefined ? { description } : {}),
       });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
@@ -265,9 +267,9 @@ Use list_prompts to find prompt_id, then list_prompt_versions to find the versio
       stop,
     }) => {
       const c = requireClient(client);
-      // createVersion uses flat params; messages is string[] (JSON-encoded message objects)
       const messagesStr = messages.map((m: any) => JSON.stringify(m));
-      const data = await c.prompts.createVersion({
+      const data = await c.client.prompts.createPromptVersion({
+        Authorization: c.auth,
         prompt_id,
         messages: messagesStr,
         model,
@@ -349,22 +351,18 @@ Use list_prompts to find prompt_id, then list_prompt_versions to find the versio
       stop,
     }) => {
       const c = requireClient(client);
-      const body: Record<string, unknown> = {
-        deploy: false,
-      };
-      if (messages !== undefined) body.messages = messages;
-      if (model !== undefined) body.model = model;
-      if (temperature !== undefined) body.temperature = temperature;
-      if (max_tokens !== undefined) body.max_tokens = max_tokens;
-      if (top_p !== undefined) body.top_p = top_p;
-      if (frequency_penalty !== undefined) body.frequency_penalty = frequency_penalty;
-      if (presence_penalty !== undefined) body.presence_penalty = presence_penalty;
-      if (stop !== undefined) body.stop = stop;
-
-      const data = await c.prompts.updatePromptVersion({
+      const data = await c.client.prompts.updatePromptVersion({
+        Authorization: c.auth,
         prompt_id,
         version: String(version),
-        body,
+        deploy: false,
+        ...(messages !== undefined ? { messages } : {}),
+        ...(model !== undefined ? { model } : {}),
+        ...(temperature !== undefined ? { temperature } : {}),
+        ...(max_tokens !== undefined ? { max_tokens } : {}),
+        ...(top_p !== undefined ? { top_p } : {}),
+        ...(frequency_penalty !== undefined ? { frequency_penalty } : {}),
+        ...(presence_penalty !== undefined ? { presence_penalty } : {}),
       });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],

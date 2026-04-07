@@ -1,11 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { RespanClient } from "@respan/respan-api";
+import type { AuthenticatedClient } from "../shared/client.js";
 import { requireClient } from "../shared/client.js";
 
 export function registerExperimentTools(
   server: McpServer,
-  client: RespanClient | null
+  client: AuthenticatedClient | null
 ) {
   // 1. List all Experiments
   server.tool(
@@ -14,7 +14,7 @@ export function registerExperimentTools(
     {},
     async () => {
       const c = requireClient(client);
-      const data = await c.experiments.listExperiments();
+      const data = await c.client.experiments.listExperiments({ Authorization: c.auth });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -32,7 +32,10 @@ export function registerExperimentTools(
     },
     async ({ experiment_id }) => {
       const c = requireClient(client);
-      const data = await c.experiments.retrieveExperiment({ experiment_id });
+      const data = await c.client.experiments.retrieveExperiment({
+        Authorization: c.auth,
+        experiment_id,
+      });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -81,7 +84,8 @@ export function registerExperimentTools(
     },
     async ({ name, dataset_id, description, workflows, evaluator_slugs }) => {
       const c = requireClient(client);
-      const data = await c.experiments.createExperiment({
+      const data = await c.client.experiments.createExperiment({
+        Authorization: c.auth,
         name,
         dataset_id,
         ...(description !== undefined ? { description } : {}),
@@ -105,7 +109,8 @@ export function registerExperimentTools(
     },
     async ({ experiment_id }) => {
       const c = requireClient(client);
-      const data = await c.experiments.listExperimentSpans({
+      const data = await c.client.experiments.listExperimentSpans({
+        Authorization: c.auth,
         experiment_id,
       });
       return {
@@ -114,34 +119,7 @@ export function registerExperimentTools(
     }
   );
 
-  // 5. Search Experiment Spans
-  server.tool(
-    "search_experiment_spans",
-    "Search experiment spans using server-side filters.",
-    {
-      experiment_id: z
-        .string()
-        .describe("Unique experiment identifier (from list_experiments)"),
-      filters: z
-        .record(z.any())
-        .optional()
-        .describe(
-          "Key-value filter criteria to narrow down spans (e.g. status, model, tags)"
-        ),
-    },
-    async ({ experiment_id, filters }) => {
-      const c = requireClient(client);
-      const data = await c.experiments.searchExperimentSpans({
-        experiment_id,
-        body: filters ?? {},
-      });
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
-      };
-    }
-  );
-
-  // 6. Get single Experiment Span
+  // 5. Get single Experiment Span
   server.tool(
     "get_experiment_span",
     "Retrieve detailed information about a specific span within an experiment.",
@@ -155,7 +133,8 @@ export function registerExperimentTools(
     },
     async ({ experiment_id, log_id }) => {
       const c = requireClient(client);
-      const data = await c.experiments.retrieveExperimentSpan({
+      const data = await c.client.experiments.retrieveExperimentSpan({
+        Authorization: c.auth,
         experiment_id,
         log_id,
       });
@@ -165,7 +144,7 @@ export function registerExperimentTools(
     }
   );
 
-  // 7. Update Experiment Span
+  // 6. Update Experiment Span
   server.tool(
     "update_experiment_span",
     "Update a specific span in an experiment (e.g., submit custom workflow results).",
@@ -184,7 +163,8 @@ export function registerExperimentTools(
     },
     async ({ experiment_id, log_id, body }) => {
       const c = requireClient(client);
-      const data = await c.experiments.updateExperimentSpan({
+      const data = await c.client.experiments.updateExperimentSpan({
+        Authorization: c.auth,
         experiment_id,
         log_id,
         body,
@@ -195,7 +175,7 @@ export function registerExperimentTools(
     }
   );
 
-  // 8. Get Experiment Spans Summary
+  // 7. Get Experiment Spans Summary
   server.tool(
     "get_experiment_spans_summary",
     "Get aggregated summary statistics for experiment spans within a time range.",
@@ -212,7 +192,8 @@ export function registerExperimentTools(
     },
     async ({ experiment_id, start_time, end_time }) => {
       const c = requireClient(client);
-      const data = await c.experiments.getExperimentSpansSummary({
+      const data = await c.client.experiments.getExperimentSpansSummary({
+        Authorization: c.auth,
         experiment_id,
         start_time,
         end_time,

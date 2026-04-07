@@ -1,9 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { RespanClient } from '@respan/respan-api';
+import type { AuthenticatedClient } from '../shared/client.js';
 import { requireClient } from '../shared/client.js';
 
-export function registerEvaluatorTools(server: McpServer, client: RespanClient | null) {
+export function registerEvaluatorTools(server: McpServer, client: AuthenticatedClient | null) {
   server.tool(
     'list_evaluators',
     'List all evaluators in your organization with pagination.',
@@ -13,7 +13,7 @@ export function registerEvaluatorTools(server: McpServer, client: RespanClient |
     },
     async () => {
       const c = requireClient(client);
-      const data = await c.evaluators.listEvaluators();
+      const data = await c.client.evaluators.listEvaluators({ Authorization: c.auth });
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -28,7 +28,7 @@ export function registerEvaluatorTools(server: McpServer, client: RespanClient |
     },
     async ({ evaluator_id }) => {
       const c = requireClient(client);
-      const data = await c.evaluators.retrieveEvaluator({ evaluator_id });
+      const data = await c.client.evaluators.retrieveEvaluator({ Authorization: c.auth, evaluator_id });
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -84,7 +84,11 @@ export function registerEvaluatorTools(server: McpServer, client: RespanClient |
     },
     async (params) => {
       const c = requireClient(client);
-      const data = await c.evaluators.createEvaluator(params);
+      const data = await c.client.evaluators.createEvaluator({
+        Authorization: c.auth,
+        ...params,
+        type: (params.type || 'llm') as any,
+      });
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -121,17 +125,16 @@ export function registerEvaluatorTools(server: McpServer, client: RespanClient |
     },
     async ({ evaluator_id, name, description, configurations, score_config, passing_conditions, llm_config, code_config }) => {
       const c = requireClient(client);
-      const updateBody: Record<string, unknown> = {};
-      if (name !== undefined) updateBody.name = name;
-      if (description !== undefined) updateBody.description = description;
-      if (configurations !== undefined) updateBody.configurations = configurations;
-      if (score_config !== undefined) updateBody.score_config = score_config;
-      if (passing_conditions !== undefined) updateBody.passing_conditions = passing_conditions;
-      if (llm_config !== undefined) updateBody.llm_config = llm_config;
-      if (code_config !== undefined) updateBody.code_config = code_config;
-      const data = await c.evaluators.updateEvaluator({
+      const data = await c.client.evaluators.updateEvaluator({
+        Authorization: c.auth,
         evaluator_id,
-        body: updateBody,
+        ...(name !== undefined ? { name } : {}),
+        ...(description !== undefined ? { description } : {}),
+        ...(configurations !== undefined ? { configurations } : {}),
+        ...(score_config !== undefined ? { score_config } : {}),
+        ...(passing_conditions !== undefined ? { passing_conditions } : {}),
+        ...(llm_config !== undefined ? { llm_config } : {}),
+        ...(code_config !== undefined ? { code_config } : {}),
       });
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
@@ -156,13 +159,11 @@ export function registerEvaluatorTools(server: McpServer, client: RespanClient |
     },
     async ({ evaluator_id, dataset_id, log_ids, params }) => {
       const c = requireClient(client);
-      const runBody: Record<string, unknown> = {};
-      if (dataset_id !== undefined) runBody.dataset_id = dataset_id;
-      if (log_ids !== undefined) runBody.log_ids = log_ids;
-      if (params !== undefined) runBody.params = params;
-      const data = await c.evaluators.runEvaluator({
+      const data = await c.client.evaluators.runEvaluator({
+        Authorization: c.auth,
         evaluator_id,
-        body: runBody,
+        ...(dataset_id !== undefined ? { dataset_id } : {}),
+        ...(log_ids !== undefined ? { log_ids } : {}),
       });
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],

@@ -1,10 +1,10 @@
 // lib/observe/traces.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { RespanClient } from "@respan/respan-api";
+import type { AuthenticatedClient } from "../shared/client.js";
 import { requireClient } from "../shared/client.js";
 
-export function registerTraceTools(server: McpServer, client: RespanClient | null) {
+export function registerTraceTools(server: McpServer, client: AuthenticatedClient | null) {
   // --- List Traces ---
   server.tool(
     "list_traces",
@@ -86,19 +86,16 @@ RESPONSE FIELDS:
         }
       }
 
-      const queryParams: Record<string, any> = {
+      const data = await c.client.traces.listTraces({
+        Authorization: c.auth,
         page_size: limit,
         page,
         sort_by,
-      };
-      if (start_time) queryParams.start_time = start_time;
-      if (end_time) queryParams.end_time = end_time;
-      if (environment) queryParams.environment = environment;
-
-      const data = await c.traces.list(
-        { filters: bodyFilters },
-        { queryParams }
-      );
+        ...(start_time ? { start_time } : {}),
+        ...(end_time ? { end_time } : {}),
+        ...(environment ? { environment } : {}),
+        ...(Object.keys(bodyFilters).length > 0 ? { filters: bodyFilters } : {}),
+      });
 
       return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
@@ -155,15 +152,13 @@ Use list_traces first to find trace_unique_id, then use this for full span tree.
     },
     async ({ trace_id, environment, start_time, end_time }) => {
       const c = requireClient(client);
-      const queryParams: Record<string, any> = {};
-      if (environment) queryParams.environment = environment;
-      if (start_time) queryParams.start_time = start_time;
-      if (end_time) queryParams.end_time = end_time;
-
-      const data = await c.traces.retrieveTrace(
-        { trace_unique_id: trace_id },
-        { queryParams }
-      );
+      const data = await c.client.traces.retrieveTrace({
+        Authorization: c.auth,
+        trace_unique_id: trace_id,
+        ...(environment ? { environment } : {}),
+        ...(start_time ? { start_time } : {}),
+        ...(end_time ? { end_time } : {}),
+      });
 
       return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }
@@ -201,15 +196,11 @@ EXAMPLE:
     },
     async ({ start_time, end_time }) => {
       const c = requireClient(client);
-      const data = await c.traces.retrieveTracesSummary(
-        {},
-        {
-          queryParams: {
-            start_time,
-            end_time,
-          },
-        }
-      );
+      const data = await c.client.traces.getTracesSummary({
+        Authorization: c.auth,
+        start_time,
+        end_time,
+      });
 
       return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
     }

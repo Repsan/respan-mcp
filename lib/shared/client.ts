@@ -8,11 +8,18 @@ export interface AuthConfig {
   baseUrl?: string;
 }
 
-export function createClient(auth: AuthConfig): RespanClient {
-  return new RespanClient({
-    token: auth.token,
-    ...(auth.baseUrl ? { environment: auth.baseUrl } : {}),
-  });
+export interface AuthenticatedClient {
+  client: RespanClient;
+  auth: string; // "Bearer <token>"
+}
+
+export function createClient(auth: AuthConfig, baseUrl?: string): AuthenticatedClient {
+  return {
+    client: new RespanClient({
+      ...(baseUrl ? { environment: baseUrl } : {}),
+    }),
+    auth: `Bearer ${auth.token}`,
+  };
 }
 
 /**
@@ -78,7 +85,7 @@ export function resolveAuthFromEnv(): AuthConfig | null {
   return resolveAuthFromCredentialFile();
 }
 
-export function requireClient(client: RespanClient | null): RespanClient {
+export function requireClient(client: AuthenticatedClient | null): AuthenticatedClient {
   if (!client) {
     throw new Error(
       'This tool requires authentication. Set RESPAN_API_KEY or run `respan login` to authenticate.'

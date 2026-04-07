@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { RespanClient } from '@respan/respan-api';
+import type { AuthenticatedClient } from './client.js';
 import { registerLogTools } from '../observe/logs.js';
 import { registerTraceTools } from '../observe/traces.js';
 import { registerUserTools } from '../observe/users.js';
@@ -10,7 +11,7 @@ import { registerExperimentTools } from '../develop/experiments.js';
 import { registerEvaluatorTools } from '../evaluate/evaluators.js';
 import { registerDatasetTools } from '../evaluate/datasets.js';
 
-function createServer(client: RespanClient | null): McpServer {
+function createServer(client: AuthenticatedClient | null): McpServer {
   const server = new McpServer({
     name: 'respan',
     version: '1.0.0',
@@ -80,12 +81,14 @@ export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: s
         || process.env.RESPAN_API_BASE_URL
         || defaultBaseUrl;
 
-      const client = new RespanClient({
-        token: apiKey,
-        environment: baseUrl,
-      });
+      const authenticatedClient: AuthenticatedClient = {
+        client: new RespanClient({
+          environment: baseUrl,
+        }),
+        auth: `Bearer ${apiKey}`,
+      };
 
-      const server = createServer(client);
+      const server = createServer(authenticatedClient);
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
       });
