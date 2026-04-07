@@ -11,11 +11,20 @@ import { registerExperimentTools } from '../develop/experiments.js';
 import { registerEvaluatorTools } from '../evaluate/evaluators.js';
 import { registerDatasetTools } from '../evaluate/datasets.js';
 
-function createServer(client: AuthenticatedClient | null): McpServer {
+function createServer(client: AuthenticatedClient | null, enabledTools?: Set<string>): McpServer {
   const server = new McpServer({
     name: 'respan',
     version: '1.0.0',
   });
+
+  // If Respan-Enabled-Tools header is set, only register whitelisted tools
+  if (enabledTools?.size) {
+    const originalTool = server.tool.bind(server);
+    (server as any).tool = function (name: string) {
+      if (!enabledTools.has(name)) return;
+      return originalTool.apply(server, arguments as any);
+    };
+  }
 
   registerLogTools(server, client);
   registerTraceTools(server, client);
@@ -88,7 +97,12 @@ export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: s
         auth: `Bearer ${apiKey}`,
       };
 
-      const server = createServer(authenticatedClient);
+      const enabledToolsHeader = req.headers['respan-enabled-tools'] as string | undefined;
+      const enabledTools = enabledToolsHeader
+        ? new Set(enabledToolsHeader.split(',').map(t => t.trim()).filter(Boolean))
+        : undefined;
+
+      const server = createServer(authenticatedClient, enabledTools);
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
       });
