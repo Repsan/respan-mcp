@@ -82,7 +82,7 @@ export function createMcpHandler(defaultBaseUrl: string, resourceMetadataPath: s
 
       const client = new RespanClient({
         token: apiKey,
-        ...(baseUrl !== defaultBaseUrl ? { environment: baseUrl } : {}),
+        environment: baseUrl,
       });
 
       const server = createServer(client);
