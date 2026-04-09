@@ -250,7 +250,7 @@ Note: Maximum log size is 20MB including all fields.`,
       full_response: z.any().optional().describe("Full response object from provider"),
       prompt_unit_price: z.number().optional().describe("Custom price per 1M prompt tokens"),
       completion_unit_price: z.number().optional().describe("Custom price per 1M completion tokens"),
-      keywordsai_api_controls: z.object({
+      respan_api_controls: z.object({
         block: z.boolean().optional()
       }).optional().describe("API behavior controls"),
       positive_feedback: z.boolean().optional().describe("User feedback (true = positive)")
