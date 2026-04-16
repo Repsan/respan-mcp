@@ -25,14 +25,22 @@ RESPONSE FIELDS (per prompt):
 Prompts are reusable templates that can have multiple versions.
 Use get_prompt_detail to see full prompt content, or list_prompt_versions to see all versions.`,
     {
+      page: z
+        .number()
+        .optional()
+        .describe("Page number to fetch (1-based, default 1)"),
       page_size: z
         .number()
         .optional()
         .describe("Number of prompts per page (1-50, default 50)"),
     },
-    async () => {
+    async ({ page, page_size = 50 }) => {
       const c = requireClient(client);
-      const data = await c.client.prompts.listPrompts({ Authorization: c.auth });
+      const data = await c.client.prompts.listPrompts({
+        Authorization: c.auth,
+        ...(page !== undefined ? { page } : {}),
+        page_size,
+      });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
       };

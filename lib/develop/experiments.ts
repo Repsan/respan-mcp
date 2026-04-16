@@ -7,6 +7,20 @@ export function registerExperimentTools(
   server: McpServer,
   client: AuthenticatedClient | null
 ) {
+  const experimentWorkflowSchema = z.object({
+    type: z
+      .enum(["prompt", "completion", "eval", "condition", "wait", "duplicate"])
+      .describe(
+        "Workflow type supported by the current Respan API: prompt, completion, eval, condition, wait, or duplicate"
+      ),
+    config: z
+      .record(z.string(), z.any())
+      .optional()
+      .describe(
+        "Workflow-specific configuration (e.g. model, prompt_id, parameters)"
+      ),
+  });
+
   // 1. List all Experiments
   server.tool(
     "list_experiments",
@@ -45,7 +59,7 @@ export function registerExperimentTools(
   // 3. Create Experiment
   server.tool(
     "create_experiment",
-    "Create a new experiment linked to a dataset. Optionally configure workflows and evaluators.",
+    "Create a new experiment linked to a dataset. Provide at least one workflow and at least one evaluator slug.",
     {
       name: z.string().describe("Name for the new experiment"),
       dataset_id: z
@@ -55,43 +69,56 @@ export function registerExperimentTools(
         .string()
         .optional()
         .describe("Optional description of the experiment's purpose"),
-      workflows: z
-        .array(
-          z.object({
-            type: z
-              .enum(["custom", "completion", "prompt"])
-              .describe(
-                "Workflow type: 'custom' for user-defined logic, 'completion' for a model completion, 'prompt' for a saved prompt"
-              ),
-            config: z
-              .record(z.any())
-              .optional()
-              .describe(
-                "Workflow-specific configuration (e.g. model, prompt_id, parameters)"
-              ),
-          })
-        )
+      workflow: z
+        .array(experimentWorkflowSchema)
+        .min(1)
         .optional()
-        .describe("Array of workflow definitions to execute in the experiment"),
+        .describe(
+          "Array of workflow definitions to execute in the experiment. This maps to the API's `workflow` field."
+        ),
+      workflows: z
+        .array(experimentWorkflowSchema)
+        .min(1)
+        .optional()
+        .describe(
+          "Deprecated alias for `workflow`. If provided, it will be forwarded as the API's `workflow` field."
+        ),
       evaluator_slugs: z
         .array(
           z
             .string()
             .describe("Slug identifier of an evaluator (from list_evaluators)")
         )
-        .optional()
-        .describe("Array of evaluator slugs to apply to experiment results"),
+        .min(1)
+        .describe(
+          "Array of evaluator slugs to apply to experiment results. This is currently required by the backend for this MCP tool."
+        ),
     },
-    async ({ name, dataset_id, description, workflows, evaluator_slugs }) => {
+    async ({ name, dataset_id, description, workflow, workflows, evaluator_slugs }) => {
       const c = requireClient(client);
+      const normalizedWorkflow = workflow ?? workflows;
+
+      if (!normalizedWorkflow?.length) {
+        throw new Error(
+          "create_experiment requires at least one workflow. Use `workflow` (preferred) or `workflows`."
+        );
+      }
+
+      if (!evaluator_slugs?.length) {
+        throw new Error(
+          "create_experiment currently requires at least one evaluator slug. Use list_evaluators first, then pass `evaluator_slugs`."
+        );
+      }
+
+      // The API accepts `workflow`, but the published SDK typings still expose `workflows`.
       const data = await c.client.experiments.createExperiment({
         Authorization: c.auth,
         name,
         dataset_id,
         ...(description !== undefined ? { description } : {}),
-        ...(workflows !== undefined ? { workflows } : {}),
-        ...(evaluator_slugs !== undefined ? { evaluator_slugs } : {}),
-      });
+        workflow: normalizedWorkflow,
+        evaluator_slugs,
+      } as any);
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -156,7 +183,7 @@ export function registerExperimentTools(
         .string()
         .describe("Unique span/log identifier (from list_experiment_spans)"),
       body: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .describe(
           "Object containing the fields to update on the span (e.g. output, metadata, status)"
         ),
