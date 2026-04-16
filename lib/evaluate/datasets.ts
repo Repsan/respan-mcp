@@ -11,9 +11,13 @@ export function registerDatasetTools(server: McpServer, client: AuthenticatedCli
       page_size: z.number().optional().default(50).describe('Number of datasets to return per page. Defaults to 50.'),
       page: z.number().optional().describe('Page number for pagination.'),
     },
-    async () => {
+    async ({ page_size = 50, page }) => {
       const c = requireClient(client);
-      const data = await c.client.datasets.listDatasets({ Authorization: c.auth });
+      const data = await c.client.datasets.listDatasets({
+        Authorization: c.auth,
+        ...(page !== undefined ? { page } : {}),
+        page_size,
+      });
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -79,7 +83,7 @@ export function registerDatasetTools(server: McpServer, client: AuthenticatedCli
     {
       dataset_id: z.string().describe('The unique identifier of the dataset.'),
       filters: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Optional filter criteria to apply when listing spans.'),
     },
@@ -103,7 +107,7 @@ export function registerDatasetTools(server: McpServer, client: AuthenticatedCli
       dataset_id: z.string().describe('The unique identifier of the dataset.'),
       input: z.string().describe('The input data for the span (can be JSON string).'),
       output: z.string().describe('The output data for the span (can be JSON string).'),
-      metadata: z.record(z.any()).optional().describe('Optional metadata key-value pairs.'),
+      metadata: z.record(z.string(), z.any()).optional().describe('Optional metadata key-value pairs.'),
     },
     async ({ dataset_id, input, output, metadata }) => {
       const c = requireClient(client);
@@ -143,7 +147,7 @@ export function registerDatasetTools(server: McpServer, client: AuthenticatedCli
       dataset_id: z.string().describe('The unique identifier of the dataset.'),
       log_id: z.string().describe('The unique identifier of the span/log to update.'),
       body: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .describe('The fields to update on the span.'),
     },
     async ({ dataset_id, log_id, body }) => {

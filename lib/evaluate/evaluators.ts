@@ -3,17 +3,51 @@ import { z } from 'zod';
 import type { AuthenticatedClient } from '../shared/client.js';
 import { requireClient } from '../shared/client.js';
 
+function paginateEvaluatorResults(data: any, page?: number, pageSize?: number) {
+  const normalizedPage = Math.max(page ?? 1, 1);
+  const normalizedPageSize = Math.max(pageSize ?? 25, 1);
+
+  if (Array.isArray(data)) {
+    const start = (normalizedPage - 1) * normalizedPageSize;
+    return data.slice(start, start + normalizedPageSize);
+  }
+
+  const results = Array.isArray(data?.results) ? data.results : null;
+  if (!results) return data;
+
+  const totalCount = typeof data.count === 'number' ? data.count : results.length;
+  const start = (normalizedPage - 1) * normalizedPageSize;
+  const end = start + normalizedPageSize;
+
+  const buildLink = (targetPage: number) =>
+    `?page=${targetPage}&page_size=${normalizedPageSize}`;
+
+  return {
+    ...data,
+    results: results.slice(start, end),
+    count: totalCount,
+    next: end < totalCount ? buildLink(normalizedPage + 1) : null,
+    previous: normalizedPage > 1 ? buildLink(normalizedPage - 1) : null,
+  };
+}
+
 export function registerEvaluatorTools(server: McpServer, client: AuthenticatedClient | null) {
   server.tool(
     'list_evaluators',
     'List all evaluators in your organization with pagination.',
     {
-      page_size: z.number().optional().describe('Number of evaluators to return per page.'),
+      page_size: z.number().optional().default(25).describe('Number of evaluators to return per page. Defaults to 25.'),
       page: z.number().optional().describe('Page number for pagination.'),
     },
-    async () => {
+    async ({ page_size = 25, page }) => {
       const c = requireClient(client);
-      const data = await c.client.evaluators.listEvaluators({ Authorization: c.auth });
+      // The evaluator list endpoint accepts pagination, but the pinned SDK typings do not expose it yet.
+      const rawData = await c.client.evaluators.listEvaluators({
+        Authorization: c.auth,
+        ...(page !== undefined ? { page } : {}),
+        ...(page_size !== undefined ? { page_size } : {}),
+      } as any);
+      const data = paginateEvaluatorResults(rawData, page, page_size);
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       };
@@ -58,7 +92,7 @@ export function registerEvaluatorTools(server: McpServer, client: AuthenticatedC
       evaluator_slug: z.string().optional().describe('A unique slug identifier for the evaluator.'),
       description: z.string().optional().describe('A description of what this evaluator does.'),
       configurations: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Additional configuration key-value pairs for the evaluator.'),
       categorical_choices: z
@@ -66,19 +100,19 @@ export function registerEvaluatorTools(server: McpServer, client: AuthenticatedC
         .optional()
         .describe('Choices for categorical score value types. Each choice has a name and value.'),
       score_config: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Configuration for how scores are calculated.'),
       passing_conditions: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Conditions that determine whether an evaluation passes.'),
       llm_config: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Configuration specific to LLM-based evaluators.'),
       code_config: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Configuration specific to code-based evaluators.'),
     },
@@ -103,23 +137,23 @@ export function registerEvaluatorTools(server: McpServer, client: AuthenticatedC
       name: z.string().optional().describe('Updated name for the evaluator.'),
       description: z.string().optional().describe('Updated description for the evaluator.'),
       configurations: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Updated configuration key-value pairs.'),
       score_config: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Updated score calculation configuration.'),
       passing_conditions: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Updated passing conditions.'),
       llm_config: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Updated LLM-specific configuration.'),
       code_config: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Updated code-specific configuration.'),
     },
@@ -153,7 +187,7 @@ export function registerEvaluatorTools(server: McpServer, client: AuthenticatedC
         .optional()
         .describe('Specific log IDs to run the evaluator against.'),
       params: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe('Additional parameters for the evaluator run.'),
     },
